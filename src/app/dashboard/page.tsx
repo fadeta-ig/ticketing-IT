@@ -101,10 +101,15 @@ export default async function DashboardPage() {
             {!isUser && kpiData && (
                 <div className="mb-2">
                     <div className="flex items-center justify-between mb-3">
-                        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <HugeiconsIcon icon={ChartBarLineIcon} className="size-3.5" />
-                            IT Performance KPI
-                        </h2>
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <HugeiconsIcon icon={ChartBarLineIcon} className="size-3.5" />
+                                IT Performance KPI
+                            </h2>
+                            <Link href="/dashboard/analytics" className="text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full hover:bg-primary/10 transition-colors uppercase tracking-widest flex items-center gap-1">
+                                Full Analytics <HugeiconsIcon icon={ArrowRight01Icon} className="size-2" />
+                            </Link>
+                        </div>
                         <RecordDowntimeDialog />
                     </div>
                     <ITKPIDashboard data={kpiData} />

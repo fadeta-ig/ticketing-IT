@@ -2,6 +2,20 @@ import prisma from "@/lib/prisma";
 import { TaskFrequency } from "@prisma/client";
 
 export class TaskService {
+    static async createTask(data: {
+        title: string;
+        description?: string;
+        frequency: TaskFrequency;
+        userId: string;
+    }) {
+        return await prisma.task.create({
+            data: {
+                ...data,
+                isCompleted: false
+            }
+        });
+    }
+
     static async getTasksByUser(userId: string) {
         return await prisma.task.findMany({
             where: { userId },
@@ -36,6 +50,10 @@ export class TaskService {
                 lastCompletedAt: isCompleted ? new Date() : undefined
             }
         });
+    }
+
+    static async toggleTaskCompletion(id: string, isCompleted: boolean) {
+        return await this.toggleTask(id, isCompleted);
     }
 
     static async resetRecurringTasks() {

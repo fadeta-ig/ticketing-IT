@@ -4,10 +4,10 @@ export class DowntimeService {
     static async recordDowntime(data: {
         startTime: Date;
         endTime?: Date;
-        reason: any;
+        reason: any; // Keep any for enum if not imported, or use DowntimeReason
         details?: string;
     }) {
-        return await (prisma as any).downtime.create({
+        return await prisma.downtime.create({
             data
         });
     }
@@ -16,7 +16,7 @@ export class DowntimeService {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
 
-        const downtimes = await (prisma as any).downtime.findMany({
+        const downtimes = await prisma.downtime.findMany({
             where: {
                 startTime: {
                     gte: startDate
@@ -24,7 +24,7 @@ export class DowntimeService {
             }
         });
 
-        const totalDowntimeMinutes = (downtimes as any[]).reduce((total, d) => {
+        const totalDowntimeMinutes = downtimes.reduce((total, d) => {
             if (!d.endTime) return total;
             const diff = d.endTime.getTime() - d.startTime.getTime();
             return total + (diff / (1000 * 60));
