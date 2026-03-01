@@ -16,6 +16,7 @@ enum Role {
 enum TicketStatus {
   OPEN
   IN_PROGRESS
+  WAITING_ON_USER
   RESOLVED
   CLOSED
 }
@@ -81,6 +82,7 @@ model User {
   accounts        Account[]
   sessions        Session[]
   auditLogs       AuditLog[]
+  kbArticles      KbArticle[]
 }
 
 model Ticket {
@@ -94,13 +96,20 @@ model Ticket {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  // SLA Tracking Fields
+  dueAt           DateTime?  // Target resolusi berdasarkan SlaPolicy
+  firstResponseAt DateTime?  // Waktu pertama kali di-assign / direspon
+  resolvedAt      DateTime?  // Waktu status berubah ke RESOLVED
+  slaBreached     Boolean    @default(false)
+
   creatorId String
   creator   User   @relation("CreatedBy", fields: [creatorId], references: [id])
   
   assigneeId String?
   assignee   User?   @relation("AssignedTo", fields: [assigneeId], references: [id])
 
-  comments Comment[]
+  comments   Comment[]
+  kbArticle  KbArticle?
 }
 
 model Downtime {
@@ -325,4 +334,59 @@ model AuditLog {
 
   @@index([userId])
   @@index([timestamp])
+}
+
+// ============================================================
+// SLA (Service Level Agreement) Module
+// ============================================================
+
+model SlaPolicy {
+  id                 String   @id @default(cuid())
+  priority           Priority @unique
+  responseTimeMins   Int      // Target respon pertama (menit)
+  resolutionTimeMins Int      // Target penyelesaian (menit)
+  businessHoursOnly  Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ============================================================
+// Knowledge Base Module
+// ============================================================
+
+model KbCategory {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?     @db.Text
+  icon        String?     // Nama icon (misal 'network', 'printer')
+  sortOrder   Int         @default(0)
+  articles    KbArticle[]
+  createdAt   DateTime    @default(now())
+}
+
+model KbArticle {
+  id              String   @id @default(cuid())
+  title           String
+  content         String   @db.Text
+  slug            String   @unique
+  isPublished     Boolean  @default(false)
+  viewCount       Int      @default(0)
+  helpfulCount    Int      @default(0)
+  notHelpfulCount Int      @default(0)
+  tags            String?  // comma-separated tags
+
+  categoryId     String
+  category       KbCategory @relation(fields: [categoryId], references: [id])
+
+  authorId       String
+  author         User       @relation(fields: [authorId], references: [id])
+
+  sourceTicketId String?    @unique
+  sourceTicket   Ticket?    @relation(fields: [sourceTicketId], references: [id])
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([categoryId])
+  @@index([isPublished])
 }

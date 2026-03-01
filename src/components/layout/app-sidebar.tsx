@@ -15,6 +15,7 @@ import {
     Logout01Icon,
     UserMultipleIcon,
     ActivityIcon,
+    Book02Icon,
 } from "@hugeicons/core-free-icons"
 import { signOut, useSession } from "next-auth/react"
 
@@ -68,6 +69,11 @@ const items = [
         title: "Monitoring Uptime",
         url: "/dashboard/monitoring",
         icon: ActivityIcon,
+    },
+    {
+        title: "Pusat Bantuan",
+        url: "/dashboard/knowledge-base",
+        icon: Book02Icon,
     },
 ]
 

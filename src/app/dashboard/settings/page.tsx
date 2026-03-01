@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { UserIcon, Settings01Icon, UserMultipleIcon, SecurityCheckIcon } from "@hugeicons/core-free-icons"
+import { UserIcon, Settings01Icon, UserMultipleIcon, SecurityCheckIcon, Timer02Icon } from "@hugeicons/core-free-icons"
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
@@ -26,14 +26,24 @@ export default async function SettingsPage() {
             color: "text-amber-500",
             bg: "bg-amber-50"
         },
-        ...(isAdmin ? [{
-            title: "Manajemen Pengguna",
-            description: "Kelola akun pengguna, peran, dan akses sistem.",
-            icon: UserMultipleIcon,
-            href: "/dashboard/settings/users",
-            color: "text-purple-500",
-            bg: "bg-purple-50"
-        }] : [])
+        ...(isAdmin ? [
+            {
+                title: "Manajemen Pengguna",
+                description: "Kelola akun pengguna, peran, dan akses sistem.",
+                icon: UserMultipleIcon,
+                href: "/dashboard/settings/users",
+                color: "text-purple-500",
+                bg: "bg-purple-50"
+            },
+            {
+                title: "Kebijakan SLA",
+                description: "Atur target waktu respon dan penyelesaian tiket berdasarkan prioritas.",
+                icon: Timer02Icon,
+                href: "/dashboard/settings/sla",
+                color: "text-emerald-500",
+                bg: "bg-emerald-50"
+            }
+        ] : [])
     ]
 
     return (

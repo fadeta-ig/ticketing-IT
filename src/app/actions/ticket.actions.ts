@@ -1,6 +1,7 @@
 "use server"
 
 import { TicketService } from "@/services/ticket.service";
+import { SlaService } from "@/services/sla.service";
 import { revalidatePath } from "next/cache";
 import { TicketStatus, Priority } from "@prisma/client";
 import { z } from "zod";
@@ -33,6 +34,14 @@ export async function createTicketAction(formData: FormData) {
 
         const validated = ticketSchema.parse(rawData);
         const ticket = await TicketService.createTicket(validated);
+
+        // Auto-calculate SLA due date
+        try {
+            const dueAt = await SlaService.calculateDueDate(ticket.priority, ticket.createdAt);
+            await TicketService.updateTicket(ticket.id, { dueAt } as any);
+        } catch (slaError) {
+            console.error("Failed to calculate SLA due date:", slaError);
+        }
 
         const session = await getServerSession(authOptions);
 
@@ -72,7 +81,26 @@ export async function createTicketAction(formData: FormData) {
 }
 
 export async function updateTicketStatusAction(id: string, status: TicketStatus, note?: string) {
-    const updatedTicket = await TicketService.updateTicket(id, { status });
+    // Build SLA tracking data
+    const slaData: Record<string, any> = { status };
+    const now = new Date();
+
+    if (status === TicketStatus.IN_PROGRESS) {
+        // Record first response time (only if not already set)
+        const existing = await TicketService.getTicketById(id);
+        if (existing && !existing.firstResponseAt) {
+            slaData.firstResponseAt = now;
+        }
+    } else if (status === TicketStatus.RESOLVED || status === TicketStatus.CLOSED) {
+        slaData.resolvedAt = now;
+        // Check breach
+        const existing = await TicketService.getTicketById(id);
+        if (existing?.dueAt && now > existing.dueAt) {
+            slaData.slaBreached = true;
+        }
+    }
+
+    const updatedTicket = await TicketService.updateTicket(id, slaData);
     const session = await getServerSession(authOptions);
 
     // Save note as comment if provided
