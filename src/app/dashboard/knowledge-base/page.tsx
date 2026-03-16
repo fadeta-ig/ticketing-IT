@@ -3,6 +3,11 @@
 import { useState, useEffect, useTransition } from "react";
 import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction } from "@/app/actions/kb.actions";
 import { useSession } from "next-auth/react";
+import dynamic from 'next/dynamic';
+import parse from 'html-react-parser';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 interface Category { id: string; name: string; description: string | null; icon: string | null; _count: { articles: number } }
 interface Article { id: string; title: string; content: string; slug: string; isPublished: boolean; viewCount: number; helpfulCount: number; notHelpfulCount: number; tags: string | null; categoryId: string; category: { name: string; icon: string | null }; author: { name: string | null }; createdAt: string; updatedAt: string }
@@ -278,9 +283,26 @@ export default function KnowledgeBasePage() {
                         </div>
                         <div>
                             <label className="text-xs text-slate-500 font-medium block mb-1">Konten Artikel *</label>
-                            <textarea rows={12} placeholder="Tulis panduan langkah demi langkah..." value={articleContent} onChange={(e) => setArticleContent(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y" />
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={articleContent}
+                                    onChange={setArticleContent}
+                                    className="h-64 sm:h-80"
+                                    modules={{
+                                        toolbar: [
+                                            [{ 'header': [1, 2, 3, false] }],
+                                            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                                            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                                            ['link', 'code-block'],
+                                            ['clean']
+                                        ],
+                                    }}
+                                    placeholder="Tulis panduan langkah demi langkah di sini..."
+                                />
+                            </div>
                         </div>
-                        <div>
+                        <div className="mt-14 sm:mt-12">
                             <label className="text-xs text-slate-500 font-medium block mb-1">Tags (pisahkan dengan koma)</label>
                             <input type="text" placeholder="wifi, koneksi, jaringan" value={articleTags} onChange={(e) => setArticleTags(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                         </div>
@@ -314,8 +336,8 @@ export default function KnowledgeBasePage() {
                                 <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="p-6 prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
-                            {selectedArticle.content}
+                        <div className="p-6 prose prose-sm prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-xl">
+                            {parse(selectedArticle.content)}
                         </div>
                         {selectedArticle.tags && (
                             <div className="px-6 pb-4 flex flex-wrap gap-2">

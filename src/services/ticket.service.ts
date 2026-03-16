@@ -58,36 +58,64 @@ export class TicketService {
 
     static async getKPIData() {
         const last30Days = new Date(new Date().setDate(new Date().getDate() - 30));
-        const allTickets = await prisma.ticket.findMany({
-            where: {
-                createdAt: {
-                    gte: last30Days
-                }
-            }
-        });
 
         // Get Downtime Stats
         const downtimeStats = await DowntimeService.getDowntimeStats(30);
 
-        const totalTickets = allTickets.length;
-        const resolvedTickets = allTickets.filter(t => t.status === TicketStatus.RESOLVED || t.status === TicketStatus.CLOSED);
-        const resolvedCount = resolvedTickets.length;
+        // 1. Optimize Ticket Counts (Delegated to DB Layer)
+        const [totalTickets, resolvedCount] = await Promise.all([
+            prisma.ticket.count({
+                where: { createdAt: { gte: last30Days } }
+            }),
+            prisma.ticket.count({
+                where: {
+                    createdAt: { gte: last30Days },
+                    status: { in: [TicketStatus.RESOLVED, TicketStatus.CLOSED] }
+                }
+            })
+        ]);
 
-        // Calculate MTTR (Mean Time to Resolution) in hours
+        // 2. Optimize Category Count via Prisma GroupBy (Eliminate .filter & any)
+        const categoryGroup = await prisma.ticket.groupBy({
+            by: ['category'],
+            where: { createdAt: { gte: last30Days } },
+            _count: { category: true }
+        });
+
+        const categoryDistribution = { LAPTOP: 0, WIFI: 0, HP: 0, OTHER: 0 };
+        categoryGroup.forEach(group => {
+            const cat = group.category?.toUpperCase();
+            if (cat === "LAPTOP") categoryDistribution.LAPTOP = group._count.category;
+            else if (cat === "WIFI") categoryDistribution.WIFI = group._count.category;
+            else if (cat === "HP") categoryDistribution.HP = group._count.category;
+            else if (cat === "OTHER") categoryDistribution.OTHER = group._count.category;
+        });
+
+        // 3. Optimize MTTR & SLA memory limits (Select ONLY required fields, not whole tables)
+        const resolvedTickets = await prisma.ticket.findMany({
+            where: {
+                createdAt: { gte: last30Days },
+                status: { in: [TicketStatus.RESOLVED, TicketStatus.CLOSED] }
+            },
+            select: {
+                createdAt: true,
+                updatedAt: true,
+                priority: true
+            }
+        });
+
         let totalResolutionTime = 0;
+        let slaCompliantCount = 0;
+
         resolvedTickets.forEach(ticket => {
             const resTime = (ticket.updatedAt.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
             totalResolutionTime += resTime;
-        });
-        const mttr = resolvedCount > 0 ? (totalResolutionTime / resolvedCount).toFixed(1) : "0";
 
-        // SLA Compliance (Resolved within 24 hours for HIGH/URGENT, 48 hours for others)
-        let slaCompliantCount = 0;
-        resolvedTickets.forEach(ticket => {
-            const resTime = (ticket.updatedAt.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
             const limit = (ticket.priority === Priority.HIGH || ticket.priority === Priority.URGENT) ? 24 : 48;
             if (resTime <= limit) slaCompliantCount++;
         });
+
+        const mttr = resolvedCount > 0 ? (totalResolutionTime / resolvedCount).toFixed(1) : "0";
         const slaRate = resolvedCount > 0 ? ((slaCompliantCount / resolvedCount) * 100).toFixed(0) : "100";
 
         return {
@@ -97,12 +125,7 @@ export class TicketService {
             slaRate,
             uptime: downtimeStats.uptimePercentage,
             totalDowntime: downtimeStats.totalDowntimeMinutes,
-            categoryDistribution: {
-                LAPTOP: (allTickets as any[]).filter(t => t.category === "LAPTOP").length,
-                WIFI: (allTickets as any[]).filter(t => t.category === "WIFI").length,
-                HP: (allTickets as any[]).filter(t => t.category === "HP").length,
-                OTHER: (allTickets as any[]).filter(t => t.category === "OTHER").length,
-            }
+            categoryDistribution
         };
     }
 
