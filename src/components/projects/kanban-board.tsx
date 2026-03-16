@@ -24,6 +24,7 @@ import { Pagination } from "@/components/ui/pagination"
 import { updateProjectStatusAction, deleteProjectAction } from "@/app/actions/project.actions"
 import { toast } from "sonner"
 import { formatErrorMessage } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
     PLANNING: {
@@ -53,105 +54,13 @@ const STATUS_OPTIONS = [
 
 const ROWS_PER_PAGE = 10
 
-interface ProjectDetailDialogProps {
-    project: any
-    isOpen: boolean
-    onClose: () => void
-    onMove: (id: string, status: string) => void
-}
 
-function ProjectDetailDialog({ project, isOpen, onClose, onMove }: ProjectDetailDialogProps) {
-    if (!isOpen || !project) return null
-
-    const status = STATUS_MAP[project.status] || STATUS_MAP.PLANNING
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-            <div
-                className="w-full max-w-lg rounded-xl border bg-background shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex items-start justify-between border-b px-6 py-4">
-                    <div className="space-y-1.5 pr-4">
-                        <h3 className="text-lg font-bold leading-tight">{project.name}</h3>
-                        {project.websiteName && (
-                            <div className="flex items-center gap-1.5 text-xs text-primary font-semibold">
-                                <HugeiconsIcon icon={GlobalIcon} className="size-3.5" />
-                                <span>{project.websiteName}</span>
-                            </div>
-                        )}
-                    </div>
-                    <Badge variant="outline" className={`shrink-0 text-[10px] ${status.className}`}>
-                        {status.label}
-                    </Badge>
-                </div>
-
-                {/* Body */}
-                <div className="space-y-4 px-6 py-4">
-                    <div>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Deskripsi</span>
-                        <p className="mt-1 text-sm text-foreground/80 leading-relaxed">
-                            {project.description || "Tidak ada deskripsi."}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">PIC</span>
-                            <p className="mt-0.5 text-sm font-medium">{project.manager?.name || "—"}</p>
-                        </div>
-                        <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Environment</span>
-                            <p className="mt-0.5 text-sm font-medium">{project.environment || "—"}</p>
-                        </div>
-                        <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Dibuat</span>
-                            <p className="mt-0.5 text-sm font-medium">
-                                {new Date(project.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                            </p>
-                        </div>
-                        <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Terakhir Diperbarui</span>
-                            <p className="mt-0.5 text-sm font-medium">
-                                {new Date(project.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Quick Move */}
-                    <div>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pindahkan Status</span>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {STATUS_OPTIONS.filter(s => s.id !== project.status).map(s => (
-                                <Button
-                                    key={s.id}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={() => { onMove(project.id, s.id); onClose() }}
-                                >
-                                    {s.title}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex justify-end border-t px-6 py-3">
-                    <Button variant="ghost" size="sm" onClick={onClose}>Tutup</Button>
-                </div>
-            </div>
-        </div>
-    )
-}
 
 export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
+    const router = useRouter()
     const [currentPage, setCurrentPage] = useState(1)
     const [filterStatus, setFilterStatus] = useState<string | null>(null)
     const [projectToDelete, setProjectToDelete] = useState<any | null>(null)
-    const [selectedProject, setSelectedProject] = useState<any | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
     const filteredProjects = filterStatus
@@ -241,7 +150,7 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
                                 <tr
                                     key={project.id}
                                     className="group transition-colors hover:bg-muted/30 cursor-pointer"
-                                    onClick={() => setSelectedProject(project)}
+                                    onClick={() => router.push(`/dashboard/web-dev/${project.id}`)}
                                 >
                                     <td className="px-4 py-3">
                                         <span className="font-medium text-foreground">{project.name}</span>
@@ -290,7 +199,7 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-44">
-                                                <DropdownMenuItem onClick={() => setSelectedProject(project)}>
+                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/web-dev/${project.id}`)}>
                                                     <HugeiconsIcon icon={ViewIcon} className="mr-2 size-3.5" />
                                                     Lihat Detail
                                                 </DropdownMenuItem>
@@ -334,13 +243,7 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
                 />
             )}
 
-            {/* Detail Dialog */}
-            <ProjectDetailDialog
-                project={selectedProject}
-                isOpen={!!selectedProject}
-                onClose={() => setSelectedProject(null)}
-                onMove={handleMove}
-            />
+
 
             {/* Delete Confirmation */}
             <ConfirmModal

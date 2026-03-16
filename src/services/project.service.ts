@@ -9,7 +9,9 @@ export class ProjectService {
                 manager: {
                     select: { name: true }
                 },
-                milestones: true
+                milestones: true,
+                webEnvironment: true,
+                projectTasks: true
             },
             orderBy: { updatedAt: 'desc' }
         });
@@ -28,6 +30,11 @@ export class ProjectService {
                 rkbItems: { orderBy: { createdAt: "asc" } },
                 disbursement: true,
                 executionLogs: { orderBy: { executionDate: "desc" } },
+                webEnvironment: true,
+                projectTasks: {
+                    orderBy: { title: "asc" },
+                    include: { assignee: { select: { name: true } } }
+                }
             }
         });
     }
@@ -82,6 +89,45 @@ export class ProjectService {
         return await prisma.milestone.update({
             where: { id },
             data
+        });
+    }
+
+    // Web Environment Methods
+
+    static async upsertWebEnvironment(projectId: string, data: {
+        repositoryUrl?: string;
+        stagingUrl?: string;
+        productionUrl?: string;
+        stackFramework?: string;
+        hostingProvider?: string;
+    }) {
+        return await prisma.webEnvironment.upsert({
+            where: { projectId },
+            create: { projectId, ...data },
+            update: data
+        });
+    }
+
+    static async createProjectTask(projectId: string, title: string, assigneeId?: string) {
+        return await prisma.projectTask.create({
+            data: {
+                projectId,
+                title,
+                assigneeId
+            }
+        });
+    }
+
+    static async toggleProjectTask(id: string, isCompleted: boolean) {
+        return await prisma.projectTask.update({
+            where: { id },
+            data: { isCompleted }
+        });
+    }
+
+    static async deleteProjectTask(id: string) {
+        return await prisma.projectTask.delete({
+            where: { id }
         });
     }
 }
