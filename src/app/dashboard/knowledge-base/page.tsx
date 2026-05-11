@@ -6,11 +6,13 @@ import { useSession } from "next-auth/react";
 import dynamic from 'next/dynamic';
 import parse from 'html-react-parser';
 import 'react-quill-new/dist/quill.snow.css';
+import { HugeiconsIcon } from "@hugeicons/react";
+import { File01Icon, CheckmarkBadge01Icon, Folder01Icon, ViewIcon, BookOpen01Icon, Search01Icon, Add01Icon, Delete01Icon, Cancel01Icon, Tick01Icon, FilterIcon } from "@hugeicons/core-free-icons";
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 interface Category { id: string; name: string; description: string | null; icon: string | null; _count: { articles: number } }
-interface Article { id: string; title: string; content: string; slug: string; isPublished: boolean; viewCount: number; helpfulCount: number; notHelpfulCount: number; tags: string | null; categoryId: string; category: { name: string; icon: string | null }; author: { name: string | null }; createdAt: string; updatedAt: string }
+interface Article { id: string; title: string; content: string; slug: string; isPublished: boolean; viewCount: number; helpfulCount: number; notHelpfulCount: number; tags: string | null; categoryId: string; category: { name: string; icon: string | null }; author: { name: string | null }; createdAt: Date; updatedAt: Date }
 interface KbStats { totalArticles: number; publishedArticles: number; totalCategories: number; totalViews: number }
 
 type TabView = "articles" | "categories" | "create";
@@ -118,17 +120,17 @@ export default function KnowledgeBasePage() {
     }
 
     return (
-        <div className="p-6 max-w-6xl mx-auto space-y-6">
+        <div className="p-6 max-w-6xl mx-auto space-y-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Pusat Bantuan (Knowledge Base)</h1>
-                    <p className="text-sm text-slate-500 mt-1">Cari solusi mandiri atau kelola artikel pengetahuan</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Knowledge Base</h1>
+                    <p className="text-sm text-slate-500 mt-1 italic">Pusat dokumentasi dan panduan penyelesaian masalah mandiri.</p>
                 </div>
                 {isAdmin && (
-                    <button onClick={() => setActiveTab("create")} className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 self-start">
-                        <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                        Buat Artikel Baru
+                    <button onClick={() => setActiveTab("create")} className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold tracking-wider uppercase rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-900/20">
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" />
+                        Buat Artikel
                     </button>
                 )}
             </div>
@@ -137,16 +139,18 @@ export default function KnowledgeBasePage() {
             {stats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { label: "Total Artikel", value: stats.totalArticles, icon: "📄" },
-                        { label: "Terpublikasi", value: stats.publishedArticles, icon: "✅" },
-                        { label: "Kategori", value: stats.totalCategories, icon: "📁" },
-                        { label: "Total Dibaca", value: stats.totalViews, icon: "👁️" },
+                        { label: "Total Artikel", value: stats.totalArticles, icon: File01Icon, color: "text-blue-600", bg: "bg-blue-50" },
+                        { label: "Terpublikasi", value: stats.publishedArticles, icon: CheckmarkBadge01Icon, color: "text-emerald-600", bg: "bg-emerald-50" },
+                        { label: "Kategori", value: stats.totalCategories, icon: Folder01Icon, color: "text-purple-600", bg: "bg-purple-50" },
+                        { label: "Total Dibaca", value: stats.totalViews, icon: ViewIcon, color: "text-orange-600", bg: "bg-orange-50" },
                     ].map((s) => (
-                        <div key={s.label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
-                            <span className="text-2xl">{s.icon}</span>
+                        <div key={s.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4 transition-all hover:shadow-md">
+                            <div className={`p-3 rounded-xl ${s.bg}`}>
+                                <HugeiconsIcon icon={s.icon} className={`size-6 ${s.color}`} />
+                            </div>
                             <div>
-                                <p className="text-xl font-bold text-slate-800">{s.value}</p>
-                                <p className="text-xs text-slate-400">{s.label}</p>
+                                <p className="text-2xl font-black tracking-tight text-slate-800">{s.value}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{s.label}</p>
                             </div>
                         </div>
                     ))}
@@ -155,16 +159,17 @@ export default function KnowledgeBasePage() {
 
             {/* Notification */}
             {message.text && (
-                <div className={`text-sm px-4 py-3 rounded-xl border flex items-center gap-2 ${message.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+                <div className={`text-sm px-5 py-3.5 rounded-xl border flex items-center gap-2 font-medium ${message.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+                    <HugeiconsIcon icon={message.type === "success" ? Tick01Icon : Cancel01Icon} className="size-5" />
                     {message.text}
                 </div>
             )}
 
             {/* Tabs */}
             {isAdmin && (
-                <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+                <div className="flex gap-2 border-b border-slate-100 pb-px">
                     {([["articles", "Artikel"], ["categories", "Kategori"], ["create", "Buat Baru"]] as [TabView, string][]).map(([tab, label]) => (
-                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === tab ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === tab ? "border-slate-900 text-slate-900" : "border-transparent text-slate-400 hover:text-slate-600"}`}>
                             {label}
                         </button>
                     ))}
@@ -173,53 +178,61 @@ export default function KnowledgeBasePage() {
 
             {/* ── Articles Tab ── */}
             {activeTab === "articles" && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {/* Search & Filter */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="relative flex-1">
-                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            <input type="text" placeholder="Cari artikel..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                        <div className="relative flex-1 group">
+                            <HugeiconsIcon icon={Search01Icon} className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                            <input type="text" placeholder="Cari panduan..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm" />
                         </div>
-                        <select value={filterCategoryId} onChange={(e) => { setFilterCategoryId(e.target.value); }} className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                            <option value="">Semua Kategori</option>
-                            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                        <button onClick={handleSearch} className="px-4 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-700 transition-all">Cari</button>
+                        <div className="relative w-full sm:w-64 group">
+                            <HugeiconsIcon icon={FilterIcon} className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                            <select value={filterCategoryId} onChange={(e) => { setFilterCategoryId(e.target.value); }} className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none shadow-sm cursor-pointer">
+                                <option value="">Semua Kategori</option>
+                                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <button onClick={handleSearch} className="px-6 py-3 bg-slate-900 text-white text-sm font-bold tracking-wider uppercase rounded-xl hover:bg-slate-800 transition-all shadow-sm">Cari</button>
                     </div>
 
                     {/* Article Grid */}
                     {articles.length === 0 ? (
-                        <div className="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                            <p className="text-5xl mb-4">📚</p>
-                            <p className="text-slate-500 text-sm">Belum ada artikel. {isAdmin ? "Buat artikel pertama Anda!" : ""}</p>
+                        <div className="text-center py-20 bg-slate-50/50 rounded-3xl border border-slate-100 border-dashed">
+                            <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                                <HugeiconsIcon icon={BookOpen01Icon} className="size-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-700">Belum Ada Artikel</h3>
+                            <p className="text-slate-400 text-sm mt-1">{isAdmin ? "Mulai dokumentasi IT pertama Anda!" : "Coba gunakan kata kunci pencarian yang lain."}</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {articles.map((article) => (
-                                <div key={article.id} className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden">
-                                    <div className="p-5">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{article.category.name}</span>
-                                            {!article.isPublished && <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Draf</span>}
+                                <div key={article.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col cursor-pointer" onClick={() => setSelectedArticle(article)}>
+                                    <div className="p-6 flex-1">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-bold uppercase tracking-widest">{article.category.name}</span>
+                                            {!article.isPublished && <span className="text-[10px] bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md font-bold uppercase tracking-widest">Draf</span>}
                                         </div>
-                                        <h3 className="font-semibold text-slate-800 group-hover:text-primary transition-colors line-clamp-2 mb-2">{article.title}</h3>
-                                        <p className="text-xs text-slate-400 line-clamp-2 mb-3">{article.content.substring(0, 120)}...</p>
-                                        <div className="flex items-center justify-between text-xs text-slate-400">
-                                            <span>oleh {article.author.name}</span>
-                                            <span className="flex items-center gap-1">👁️ {article.viewCount}</span>
+                                        <h3 className="font-bold text-lg text-slate-800 group-hover:text-primary transition-colors line-clamp-2 leading-tight mb-3">{article.title}</h3>
+                                        <div className="text-sm text-slate-500 line-clamp-3 mb-4 leading-relaxed opacity-80" dangerouslySetInnerHTML={{ __html: article.content.substring(0, 150) + "..." }} />
+                                    </div>
+                                    <div className="px-6 py-4 border-t border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                {article.author.name?.charAt(0) || "U"}
+                                            </div>
+                                            <span className="text-xs font-medium text-slate-500">{article.author.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded-md border border-slate-100">
+                                            <HugeiconsIcon icon={ViewIcon} className="size-3.5" /> {article.viewCount}
                                         </div>
                                     </div>
-                                    <div className="px-5 py-3 border-t border-slate-50 bg-slate-50/50 flex items-center gap-2">
-                                        <button onClick={() => setSelectedArticle(article)} className="text-xs text-primary font-medium hover:underline">Baca</button>
-                                        {isAdmin && (
-                                            <>
-                                                <span className="text-slate-200">|</span>
-                                                <button onClick={() => togglePublish(article)} className="text-xs text-slate-500 hover:text-primary font-medium">{article.isPublished ? "Unpublish" : "Publish"}</button>
-                                                <span className="text-slate-200">|</span>
-                                                <button onClick={() => handleDeleteArticle(article.id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Hapus</button>
-                                            </>
-                                        )}
-                                    </div>
+                                    {isAdmin && (
+                                        <div className="px-6 py-3 border-t border-slate-100 bg-white flex items-center justify-end gap-4" onClick={(e) => e.stopPropagation()}>
+                                            <button onClick={() => togglePublish(article)} className="text-[10px] uppercase tracking-widest font-bold text-slate-400 hover:text-slate-700 transition-colors">{article.isPublished ? "Unpublish" : "Publish"}</button>
+                                            <button onClick={() => handleDeleteArticle(article.id)} className="text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors">Hapus</button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -229,34 +242,47 @@ export default function KnowledgeBasePage() {
 
             {/* ── Categories Tab ── */}
             {activeTab === "categories" && isAdmin && (
-                <div className="space-y-4">
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest">Buat Kategori Baru</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <input type="text" placeholder="Nama Kategori *" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                            <input type="text" placeholder="Deskripsi (opsional)" value={newCategoryDesc} onChange={(e) => setNewCategoryDesc(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                            <input type="text" placeholder="Icon (opsional, misal: wifi)" value={newCategoryIcon} onChange={(e) => setNewCategoryIcon(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                <div className="space-y-6">
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <HugeiconsIcon icon={Folder01Icon} className="size-4 text-primary" /> Buat Kategori Baru
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Nama Kategori</label>
+                                <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Deskripsi</label>
+                                <input type="text" value={newCategoryDesc} onChange={(e) => setNewCategoryDesc(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Icon String</label>
+                                <input type="text" placeholder="wifi" value={newCategoryIcon} onChange={(e) => setNewCategoryIcon(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                            </div>
                         </div>
-                        <button onClick={handleCreateCategory} disabled={isPending || !newCategoryName.trim()} className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all">
-                            {isPending ? "Membuat..." : "Buat Kategori"}
+                        <button onClick={handleCreateCategory} disabled={isPending || !newCategoryName.trim()} className="px-6 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-all">
+                            {isPending ? "Menyimpan..." : "Simpan Kategori"}
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                            <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest">Daftar Kategori</h3>
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Daftar Kategori Aktif</h3>
                         </div>
                         <div className="divide-y divide-slate-100">
                             {categories.length === 0 ? (
                                 <div className="p-8 text-center text-sm text-slate-400">Belum ada kategori.</div>
                             ) : (
                                 categories.map((cat) => (
-                                    <div key={cat.id} className="px-6 py-4 flex items-center justify-between">
+                                    <div key={cat.id} className="px-8 py-5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                         <div>
-                                            <p className="font-semibold text-slate-700">{cat.name}</p>
-                                            <p className="text-xs text-slate-400">{cat.description || "Tidak ada deskripsi"} · {cat._count.articles} artikel</p>
+                                            <p className="font-bold text-slate-800 text-base">{cat.name}</p>
+                                            <p className="text-xs text-slate-500 mt-1">{cat.description || "Tidak ada deskripsi"} · <span className="font-bold text-primary">{cat._count.articles} Artikel</span></p>
                                         </div>
-                                        <button onClick={() => handleDeleteCategory(cat.id)} disabled={cat._count.articles > 0} className="text-xs text-red-400 hover:text-red-600 disabled:text-slate-300 disabled:cursor-not-allowed">Hapus</button>
+                                        <button onClick={() => handleDeleteCategory(cat.id)} disabled={cat._count.articles > 0} className="text-xs text-red-400 hover:text-red-600 disabled:text-slate-300 disabled:cursor-not-allowed font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5">
+                                            <HugeiconsIcon icon={Delete01Icon} className="size-4" /> Hapus
+                                        </button>
                                     </div>
                                 ))
                             )}
@@ -267,28 +293,28 @@ export default function KnowledgeBasePage() {
 
             {/* ── Create Tab ── */}
             {activeTab === "create" && isAdmin && (
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-                    <h3 className="text-lg font-bold text-slate-700">Buat Artikel Baru</h3>
-                    <div className="space-y-4">
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                    <h3 className="text-xl font-bold text-slate-900 mb-8 tracking-tight border-b border-slate-100 pb-4">Tulis Artikel Pengetahuan Baru</h3>
+                    <div className="space-y-6">
                         <div>
-                            <label className="text-xs text-slate-500 font-medium block mb-1">Judul Artikel *</label>
-                            <input type="text" placeholder="Misal: Cara Mengatasi WiFi Tidak Terkoneksi" value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Judul Artikel *</label>
+                            <input type="text" placeholder="Misal: Cara Mengatasi WiFi Tidak Terkoneksi" value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm" />
                         </div>
                         <div>
-                            <label className="text-xs text-slate-500 font-medium block mb-1">Kategori *</label>
-                            <select value={articleCategoryId} onChange={(e) => setArticleCategoryId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                <option value="">Pilih Kategori</option>
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Kategori *</label>
+                            <select value={articleCategoryId} onChange={(e) => setArticleCategoryId(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none shadow-sm">
+                                <option value="">-- Pilih Kategori --</option>
                                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs text-slate-500 font-medium block mb-1">Konten Artikel *</label>
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Konten Artikel *</label>
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
                                 <ReactQuill
                                     theme="snow"
                                     value={articleContent}
                                     onChange={setArticleContent}
-                                    className="h-64 sm:h-80"
+                                    className="h-[400px]"
                                     modules={{
                                         toolbar: [
                                             [{ 'header': [1, 2, 3, false] }],
@@ -302,20 +328,20 @@ export default function KnowledgeBasePage() {
                                 />
                             </div>
                         </div>
-                        <div className="mt-14 sm:mt-12">
-                            <label className="text-xs text-slate-500 font-medium block mb-1">Tags (pisahkan dengan koma)</label>
-                            <input type="text" placeholder="wifi, koneksi, jaringan" value={articleTags} onChange={(e) => setArticleTags(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                        <div className="mt-20 pt-8 border-t border-slate-100">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Tags (Opsional, pisahkan koma)</label>
+                            <input type="text" placeholder="wifi, error, setup" value={articleTags} onChange={(e) => setArticleTags(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm" />
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={articlePublished} onChange={(e) => setArticlePublished(e.target.checked)} className="rounded border-slate-300 text-primary focus:ring-primary/20" />
-                            <span className="text-sm text-slate-600">Langsung Publikasikan</span>
+                        <label className="flex items-center gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <input type="checkbox" checked={articlePublished} onChange={(e) => setArticlePublished(e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20" />
+                            <span className="text-sm font-bold text-slate-700">Langsung publikasikan agar dapat dibaca user</span>
                         </label>
                     </div>
-                    <div className="flex gap-3 pt-2">
-                        <button onClick={handleCreateArticle} disabled={isPending || !articleTitle.trim() || !articleContent.trim() || !articleCategoryId} className="px-6 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all">
+                    <div className="flex gap-4 pt-8 mt-8 border-t border-slate-100">
+                        <button onClick={handleCreateArticle} disabled={isPending || !articleTitle.trim() || !articleContent.trim() || !articleCategoryId} className="px-8 py-3 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-all shadow-md">
                             {isPending ? "Menyimpan..." : "Simpan Artikel"}
                         </button>
-                        <button onClick={() => setActiveTab("articles")} className="px-6 py-2.5 border border-slate-200 text-slate-500 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all">
+                        <button onClick={() => setActiveTab("articles")} className="px-8 py-3 border border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all">
                             Batal
                         </button>
                     </div>
@@ -324,25 +350,28 @@ export default function KnowledgeBasePage() {
 
             {/* ── Article Detail Modal ── */}
             {selectedArticle && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedArticle(null)}>
-                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6 border-b border-slate-100 flex items-start justify-between">
-                            <div>
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{selectedArticle.category.name}</span>
-                                <h2 className="text-xl font-bold text-slate-800 mt-2">{selectedArticle.title}</h2>
-                                <p className="text-xs text-slate-400 mt-1">oleh {selectedArticle.author.name} · 👁️ {selectedArticle.viewCount} kali dibaca</p>
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6" onClick={() => setSelectedArticle(null)}>
+                    <div className="bg-white rounded-[2rem] max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-8 border-b border-slate-100 flex items-start justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                            <div className="pr-8">
+                                <span className="text-[10px] bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold uppercase tracking-widest">{selectedArticle.category.name}</span>
+                                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-4 tracking-tight leading-tight">{selectedArticle.title}</h2>
+                                <div className="flex items-center gap-4 mt-4 text-xs font-medium text-slate-500">
+                                    <span className="flex items-center gap-1.5"><HugeiconsIcon icon={File01Icon} className="size-3.5" /> Ditulis oleh {selectedArticle.author.name}</span>
+                                    <span className="flex items-center gap-1.5"><HugeiconsIcon icon={ViewIcon} className="size-3.5" /> {selectedArticle.viewCount} Dilihat</span>
+                                </div>
                             </div>
-                            <button onClick={() => setSelectedArticle(null)} className="text-slate-400 hover:text-slate-600 p-1">
-                                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <button onClick={() => setSelectedArticle(null)} className="text-slate-400 hover:text-slate-900 p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
+                                <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
                             </button>
                         </div>
-                        <div className="p-6 prose prose-sm prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-xl">
+                        <div className="p-8 prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-2xl prose-pre:bg-slate-900 prose-pre:rounded-xl">
                             {parse(selectedArticle.content)}
                         </div>
                         {selectedArticle.tags && (
-                            <div className="px-6 pb-4 flex flex-wrap gap-2">
+                            <div className="px-8 pb-8 flex flex-wrap gap-2">
                                 {selectedArticle.tags.split(",").map((tag) => (
-                                    <span key={tag.trim()} className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">#{tag.trim()}</span>
+                                    <span key={tag.trim()} className="text-[10px] font-bold uppercase tracking-widest bg-slate-50 border border-slate-100 text-slate-500 px-3 py-1.5 rounded-lg">#{tag.trim()}</span>
                                 ))}
                             </div>
                         )}

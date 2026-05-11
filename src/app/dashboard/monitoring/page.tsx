@@ -78,7 +78,7 @@ export default function MonitoringDashboard() {
                         </div>
                         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest opacity-80 italic">Network Nodes (IP)</h3>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {networkNodes.map((target) => (
                             <MonitoringCard
                                 key={target.id}
