@@ -15,11 +15,11 @@ import {
 } from "@/app/actions/infra-workflow.actions"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { toast } from "sonner"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 interface ExecutionPanelProps {
     projectId: string
-    executionLogs: any[]
+    executionLogs: SafeAny[]
     isCurrentPhase: boolean
 }
 
@@ -38,7 +38,7 @@ export function ExecutionPanel({ projectId, executionLogs, isCurrentPhase }: Exe
             await addExecutionLogAction(projectId, formData);
             (e.target as HTMLFormElement).reset()
             toast.success("Log eksekusi ditambahkan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -51,7 +51,7 @@ export function ExecutionPanel({ projectId, executionLogs, isCurrentPhase }: Exe
             await completeProjectAction(projectId)
             toast.success("Proyek diselesaikan!")
             setIsCompleteOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsCompleting(false)
@@ -163,7 +163,7 @@ export function ExecutionPanel({ projectId, executionLogs, isCurrentPhase }: Exe
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {executionLogs.map((log: any) => (
+                            {executionLogs.map((log: SafeAny) => (
                                 <div key={log.id} className="relative pl-6 pb-4 border-l-2 border-muted last:pb-0">
                                     <div className="absolute -left-[5px] top-1.5 size-2 rounded-full bg-primary" />
                                     <div className="space-y-1">

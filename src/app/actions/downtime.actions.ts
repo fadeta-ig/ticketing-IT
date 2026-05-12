@@ -45,10 +45,10 @@ export async function recordDowntimeAction(formData: FormData) {
         revalidatePath("/dashboard");
         revalidatePath("/dashboard/infrastructure");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal mencatat downtime");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal mencatat downtime");
     }
 }

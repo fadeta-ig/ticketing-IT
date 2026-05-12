@@ -44,7 +44,7 @@ export function CreateTaskDialog() {
             await createTaskAction(formData)
             toast.success("Tugas Berhasil Ditambahkan")
             setOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menambahkan tugas: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

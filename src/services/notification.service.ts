@@ -1,6 +1,12 @@
+import { SettingsService } from "./settings.service";
+
 export class NotificationService {
     private static readonly WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || "";
-    private static readonly ADMIN_NUMBER = "081553821808";
+    private static readonly FALLBACK_ADMIN_NUMBER = "081553821808";
+
+    private static async getAdminNumber() {
+        return await SettingsService.getSetting("WA_ADMIN_NUMBER", this.FALLBACK_ADMIN_NUMBER);
+    }
 
     static async sendWhatsAppNotification(ticket: {
         id: string;
@@ -15,7 +21,8 @@ export class NotificationService {
             `Pengirim: ${ticket.creatorName}\n\n` +
             `Silakan cek dashboard untuk detail lebih lanjut.`;
 
-        console.log(`[WhatsApp Notification] Sending to ${this.ADMIN_NUMBER}:`, message);
+        const adminNumber = await this.getAdminNumber();
+        console.log(`[WhatsApp Notification] Sending to ${adminNumber}:`, message);
 
         if (!this.WHATSAPP_API_URL) {
             console.warn("[WhatsApp Notification] WHATSAPP_API_URL not configured. Message logged to console only.");
@@ -29,7 +36,7 @@ export class NotificationService {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    number: this.ADMIN_NUMBER,
+                    number: adminNumber,
                     message: message,
                 }),
             });
@@ -59,7 +66,8 @@ export class NotificationService {
             (params.note ? `*Catatan IT:* ${params.note}\n\n` : "") +
             `Halo ${params.recipientName}, tiket Anda sedang kami proses. Mohon ditunggu update selanjutnya.`;
 
-        const targetNumber = params.recipientNumber || this.ADMIN_NUMBER;
+        const adminNumber = await this.getAdminNumber();
+        const targetNumber = params.recipientNumber || adminNumber;
         console.log(`[WhatsApp Notification] Sending Update to ${targetNumber}:`, message);
 
         if (!this.WHATSAPP_API_URL) {

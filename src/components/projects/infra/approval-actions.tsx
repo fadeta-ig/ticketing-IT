@@ -51,7 +51,7 @@ export function ApprovalActions({ projectId, phase }: ApprovalActionsProps) {
         try {
             await approveHandlers[phase](projectId)
             toast.success(`${phaseLabels[phase]} disetujui!`)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -69,7 +69,7 @@ export function ApprovalActions({ projectId, phase }: ApprovalActionsProps) {
             toast.success(`${phaseLabels[phase]} ditolak`)
             setShowRejectForm(false)
             setReason("")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

@@ -17,12 +17,12 @@ import {
 } from "@/app/actions/infra-workflow.actions"
 import { ApprovalActions } from "./approval-actions"
 import { toast } from "sonner"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 interface RkbFormProps {
     projectId: string
-    rkbSubmission: any
-    rkbItems: any[]
+    rkbSubmission: SafeAny
+    rkbItems: SafeAny[]
     isCurrentPhase: boolean
 }
 
@@ -51,7 +51,7 @@ export function RkbForm({ projectId, rkbSubmission, rkbItems, isCurrentPhase }: 
             const formData = new FormData(e.currentTarget)
             await saveRkbAction(projectId, formData)
             toast.success("Data RKB tersimpan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -66,7 +66,7 @@ export function RkbForm({ projectId, rkbSubmission, rkbItems, isCurrentPhase }: 
             await addRkbItemAction(projectId, formData);
             (e.target as HTMLFormElement).reset()
             toast.success("Item ditambahkan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsAddingItem(false)
@@ -77,7 +77,7 @@ export function RkbForm({ projectId, rkbSubmission, rkbItems, isCurrentPhase }: 
         try {
             await removeRkbItemAction(itemId, projectId)
             toast.success("Item dihapus")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         }
     }
@@ -87,14 +87,14 @@ export function RkbForm({ projectId, rkbSubmission, rkbItems, isCurrentPhase }: 
         try {
             await submitRkbAction(projectId)
             toast.success("RKB diajukan untuk persetujuan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
         }
     }
 
-    const totalBudget = rkbItems.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0)
+    const totalBudget = rkbItems.reduce((sum: number, item: SafeAny) => sum + (item.totalPrice || 0), 0)
 
     return (
         <div className="space-y-4">
@@ -173,7 +173,7 @@ export function RkbForm({ projectId, rkbSubmission, rkbItems, isCurrentPhase }: 
                                 </tr>
                             </thead>
                             <tbody>
-                                {rkbItems.map((item: any, index: number) => (
+                                {rkbItems.map((item: SafeAny, index: number) => (
                                     <tr key={item.id} className="border-b last:border-0">
                                         <td className="py-2 pr-3 text-muted-foreground">{index + 1}</td>
                                         <td className="py-2 pr-3 font-medium">{item.itemName}</td>

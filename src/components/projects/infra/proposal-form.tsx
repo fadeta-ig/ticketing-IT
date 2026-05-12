@@ -12,11 +12,11 @@ import {
 } from "@/app/actions/infra-workflow.actions"
 import { ApprovalActions } from "./approval-actions"
 import { toast } from "sonner"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 interface ProposalFormProps {
     projectId: string
-    proposal: any
+    proposal: SafeAny
     isCurrentPhase: boolean
 }
 
@@ -41,7 +41,7 @@ export function ProposalForm({ projectId, proposal, isCurrentPhase }: ProposalFo
             const formData = new FormData(e.currentTarget)
             await saveProposalAction(projectId, formData)
             toast.success("Proposal tersimpan sebagai draft")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menyimpan: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -53,7 +53,7 @@ export function ProposalForm({ projectId, proposal, isCurrentPhase }: ProposalFo
         try {
             await submitProposalAction(projectId)
             toast.success("Proposal diajukan untuk persetujuan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal mengajukan: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

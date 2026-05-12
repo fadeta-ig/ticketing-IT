@@ -10,7 +10,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { deleteProjectAction } from "@/app/actions/project.actions"
 import { toast } from "sonner"
 import { useState } from "react"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 import Link from "next/link"
 
 const PHASE_LABELS: Record<string, string> = {
@@ -23,7 +23,7 @@ const PHASE_LABELS: Record<string, string> = {
 
 const PHASE_ORDER = ["PROPOSAL", "RKB", "DISBURSEMENT", "EXECUTION", "COMPLETED"]
 
-export function InfrastructureProjectCard({ project }: { project: any }) {
+export function InfrastructureProjectCard({ project }: { project: SafeAny }) {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -37,7 +37,7 @@ export function InfrastructureProjectCard({ project }: { project: any }) {
             await deleteProjectAction(project.id)
             toast.success("Proyek Dihapus")
             setIsConfirmOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menghapus: " + formatErrorMessage(error))
         } finally {
             setIsDeleting(false)
@@ -60,9 +60,15 @@ export function InfrastructureProjectCard({ project }: { project: any }) {
                             }>
                                 {PHASE_LABELS[currentPhase] || currentPhase}
                             </Badge>
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]">
-                                {project.status}
-                            </Badge>
+                            {project.endDate && new Date(project.endDate as string) < new Date() && currentPhase !== "COMPLETED" ? (
+                                <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20 text-[10px] animate-pulse">
+                                    Overdue
+                                </Badge>
+                            ) : (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]">
+                                    {project.status as string}
+                                </Badge>
+                            )}
                         </div>
                     </div>
                     <div className="mt-4 space-y-1">
@@ -82,9 +88,9 @@ export function InfrastructureProjectCard({ project }: { project: any }) {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <div className={`flex items-center gap-1.5 ${project.endDate && new Date(project.endDate as string) < new Date() && currentPhase !== "COMPLETED" ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
                             <HugeiconsIcon icon={Calendar03Icon} className="size-3.5" />
-                            <span>{project.endDate ? new Date(project.endDate).toLocaleDateString("id-ID") : "Belum diatur"}</span>
+                            <span>{project.endDate ? new Date(project.endDate as string).toLocaleDateString("id-ID") : "Belum diatur"}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                             <HugeiconsIcon icon={UserIcon} className="size-3.5" />

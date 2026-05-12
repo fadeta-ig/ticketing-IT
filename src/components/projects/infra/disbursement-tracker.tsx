@@ -20,11 +20,11 @@ import {
 } from "@/app/actions/infra-workflow.actions"
 import { ApprovalActions } from "./approval-actions"
 import { toast } from "sonner"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 interface DisbursementTrackerProps {
     projectId: string
-    disbursement: any
+    disbursement: SafeAny
     rkbTotalBudget: number
     isCurrentPhase: boolean
 }
@@ -53,7 +53,7 @@ export function DisbursementTracker({ projectId, disbursement, rkbTotalBudget, i
             const formData = new FormData(e.currentTarget)
             await saveDisbursementAction(projectId, formData)
             toast.success("Data pencairan tersimpan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -65,7 +65,7 @@ export function DisbursementTracker({ projectId, disbursement, rkbTotalBudget, i
         try {
             await submitDisbursementAction(projectId)
             toast.success("Pencairan dana diajukan")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

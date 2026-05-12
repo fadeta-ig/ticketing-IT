@@ -6,8 +6,9 @@ import { MONITORING_TARGETS, MonitoringStatus } from "@/types/monitoring"
 import { getUptimeStatusAction } from "@/app/actions/monitoring.actions"
 import { Button } from "@/components/ui/button"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Refresh01Icon, ActivityIcon, SignalIcon, GlobalIcon } from "@hugeicons/core-free-icons"
+import { Refresh01Icon, SignalIcon, GlobalIcon } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 export default function MonitoringDashboard() {
     const [statuses, setStatuses] = useState<MonitoringStatus[]>([])
@@ -136,8 +137,4 @@ export default function MonitoringDashboard() {
             </div>
         </div>
     )
-}
-
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ")
 }

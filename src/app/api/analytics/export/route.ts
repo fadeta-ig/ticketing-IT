@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { UserOptions } from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { getServerSession } from "next-auth";
@@ -14,7 +13,7 @@ interface jsPDFCustom extends jsPDF {
 
 export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role === "USER") {
+    if (!session || session.user?.role === "USER") {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -28,11 +28,11 @@ export async function upsertSlaPolicyAction(data: {
         revalidatePath("/dashboard/settings/sla");
         revalidatePath("/dashboard");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal menyimpan kebijakan SLA");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyimpan kebijakan SLA");
     }
 }
 

@@ -48,7 +48,7 @@ export function CreateTicketDialog() {
             await createTicketAction(formData)
             toast.success("Tiket Berhasil Dibuat")
             setOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal membuat tiket: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

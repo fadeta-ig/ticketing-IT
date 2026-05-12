@@ -25,7 +25,27 @@ import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { formatErrorMessage } from "@/lib/utils"
 
-export function TicketDetail({ ticket }: { ticket: any }) {
+interface TicketComment {
+    id: string;
+    content: string;
+    createdAt: Date;
+    author: { name: string | null } | null;
+}
+
+interface TicketDetailData {
+    id: string;
+    title: string;
+    description: string;
+    priority: string;
+    status: string;
+    category: string | null;
+    classification: string | null;
+    createdAt: Date;
+    creator: { name: string | null } | null;
+    comments: TicketComment[];
+}
+
+export function TicketDetail({ ticket }: { ticket: TicketDetailData }) {
     const { data: session } = useSession()
     const isAdmin = session?.user?.role === "ADMIN"
 
@@ -54,10 +74,10 @@ export function TicketDetail({ ticket }: { ticket: any }) {
     const handleUpdateStatus = async (status: string) => {
         setIsLoading(true)
         try {
-            await updateTicketStatusAction(ticket.id, status as any, note)
+            await updateTicketStatusAction(ticket.id, status as Parameters<typeof updateTicketStatusAction>[1], note)
             toast.success(`Berhasil memperbarui status ke ${status}`)
-            setNote("") // Clear note on success
-        } catch (error: any) {
+            setNote("")
+        } catch (error: unknown) {
             toast.error("Gagal: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)
@@ -157,7 +177,7 @@ export function TicketDetail({ ticket }: { ticket: any }) {
                         <CardContent className="p-6">
                             {ticket.comments && ticket.comments.length > 0 ? (
                                 <div className="space-y-6">
-                                    {ticket.comments.map((comment: any, idx: number) => (
+                                    {ticket.comments.map((comment: TicketComment, idx: number) => (
                                         <div key={comment.id} className="relative pl-6 pb-2 last:pb-0">
                                             {/* Line marker */}
                                             {idx !== ticket.comments.length - 1 && (

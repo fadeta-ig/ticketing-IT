@@ -71,12 +71,12 @@ export async function createTicketAction(formData: FormData) {
 
         revalidatePath("/dashboard/ticketing");
         revalidatePath("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error in createTicketAction:", error);
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal membuat tiket");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal membuat tiket");
     }
 }
 

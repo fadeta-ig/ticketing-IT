@@ -426,3 +426,10 @@ model ProjectTask {
   assigneeId  String?
   assignee    User?    @relation(fields: [assigneeId], references: [id])
 }
+
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}

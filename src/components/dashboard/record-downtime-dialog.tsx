@@ -41,7 +41,7 @@ export function RecordDowntimeDialog() {
             await recordDowntimeAction(formData)
             toast.success("Kejadian Downtime Berhasil Dicatat")
             setOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal mencatat downtime: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

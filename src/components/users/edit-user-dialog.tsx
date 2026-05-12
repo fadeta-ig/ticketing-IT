@@ -46,7 +46,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             await updateUserAction(user.id, formData)
             toast.success("Data pengguna berhasil diperbarui")
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal memperbarui: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

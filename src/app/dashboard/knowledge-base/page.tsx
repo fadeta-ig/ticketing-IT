@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction } from "@/app/actions/kb.actions";
+import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction, incrementKbViewCountAction } from "@/app/actions/kb.actions";
 import { useSession } from "next-auth/react";
 import dynamic from 'next/dynamic';
 import parse from 'html-react-parser';
 import 'react-quill-new/dist/quill.snow.css';
 import { HugeiconsIcon } from "@hugeicons/react";
-import { File01Icon, CheckmarkBadge01Icon, Folder01Icon, ViewIcon, BookOpen01Icon, Search01Icon, Add01Icon, Delete01Icon, Cancel01Icon, Tick01Icon, FilterIcon } from "@hugeicons/core-free-icons";
+import { File01Icon, CheckmarkBadge01Icon, Folder01Icon, ViewIcon, BookOpen01Icon, Search01Icon, Add01Icon, Delete01Icon, Cancel01Icon, Tick01Icon, FilterIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
@@ -42,6 +42,12 @@ export default function KnowledgeBasePage() {
 
     const [message, setMessage] = useState({ type: "", text: "" });
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+    const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editCategoryId, setEditCategoryId] = useState("");
+    const [editTags, setEditTags] = useState("");
+    const [editPublished, setEditPublished] = useState(false);
 
     useEffect(() => { loadData(); }, []);
 
@@ -61,6 +67,41 @@ export default function KnowledgeBasePage() {
     function showMsg(type: string, text: string) {
         setMessage({ type, text });
         setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+    }
+
+    function handleViewArticle(article: Article) {
+        setSelectedArticle(article);
+        incrementKbViewCountAction(article.id);
+        setArticles((prev) => prev.map((a) => a.id === article.id ? { ...a, viewCount: a.viewCount + 1 } : a));
+    }
+
+    function handleOpenEdit(article: Article) {
+        setEditingArticle(article);
+        setEditTitle(article.title);
+        setEditContent(article.content);
+        setEditCategoryId(article.categoryId);
+        setEditTags(article.tags || "");
+        setEditPublished(article.isPublished);
+    }
+
+    function handleUpdateArticle() {
+        if (!editingArticle || !editTitle.trim() || !editContent.trim() || !editCategoryId) return;
+        startTransition(async () => {
+            try {
+                await updateKbArticleAction(editingArticle.id, {
+                    title: editTitle,
+                    content: editContent,
+                    categoryId: editCategoryId,
+                    tags: editTags || undefined,
+                    isPublished: editPublished,
+                });
+                setEditingArticle(null);
+                showMsg("success", "Artikel berhasil diperbarui!");
+                await loadData();
+            } catch (err: unknown) {
+                showMsg("error", err instanceof Error ? err.message : "Gagal memperbarui artikel");
+            }
+        });
     }
 
     function handleCreateCategory() {
@@ -207,7 +248,7 @@ export default function KnowledgeBasePage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {articles.map((article) => (
-                                <div key={article.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col cursor-pointer" onClick={() => setSelectedArticle(article)}>
+                                <div key={article.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col cursor-pointer" onClick={() => handleViewArticle(article)}>
                                     <div className="p-6 flex-1">
                                         <div className="flex items-center gap-2 mb-4">
                                             <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-bold uppercase tracking-widest">{article.category.name}</span>
@@ -229,6 +270,9 @@ export default function KnowledgeBasePage() {
                                     </div>
                                     {isAdmin && (
                                         <div className="px-6 py-3 border-t border-slate-100 bg-white flex items-center justify-end gap-4" onClick={(e) => e.stopPropagation()}>
+                                            <button onClick={() => handleOpenEdit(article)} className="text-[10px] uppercase tracking-widest font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                                                <HugeiconsIcon icon={PencilEdit01Icon} className="size-3" /> Edit
+                                            </button>
                                             <button onClick={() => togglePublish(article)} className="text-[10px] uppercase tracking-widest font-bold text-slate-400 hover:text-slate-700 transition-colors">{article.isPublished ? "Unpublish" : "Publish"}</button>
                                             <button onClick={() => handleDeleteArticle(article.id)} className="text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors">Hapus</button>
                                         </div>
@@ -375,6 +419,56 @@ export default function KnowledgeBasePage() {
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+            {/* ── Edit Article Modal ── */}
+            {editingArticle && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6" onClick={() => setEditingArticle(null)}>
+                    <div className="bg-white rounded-[2rem] max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-8 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                                <HugeiconsIcon icon={PencilEdit01Icon} className="size-5 text-primary" /> Edit Artikel
+                            </h2>
+                            <button onClick={() => setEditingArticle(null)} className="text-slate-400 hover:text-slate-900 p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
+                                <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
+                            </button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Judul Artikel *</label>
+                                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Kategori *</label>
+                                <select value={editCategoryId} onChange={(e) => setEditCategoryId(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none shadow-sm">
+                                    <option value="">-- Pilih Kategori --</option>
+                                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Konten Artikel *</label>
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
+                                    <ReactQuill theme="snow" value={editContent} onChange={setEditContent} className="h-[300px]"
+                                        modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline', 'strike', 'blockquote'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'code-block'], ['clean']] }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-16 pt-4">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Tags (pisahkan koma)</label>
+                                <input type="text" value={editTags} onChange={(e) => setEditTags(e.target.value)} placeholder="wifi, error, setup" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm" />
+                            </div>
+                            <label className="flex items-center gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <input type="checkbox" checked={editPublished} onChange={(e) => setEditPublished(e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20" />
+                                <span className="text-sm font-bold text-slate-700">Publikasikan artikel ini</span>
+                            </label>
+                            <div className="flex gap-4 pt-4 border-t border-slate-100">
+                                <button onClick={handleUpdateArticle} disabled={isPending || !editTitle.trim() || !editContent.trim() || !editCategoryId} className="px-8 py-3 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-all shadow-md">
+                                    {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                                </button>
+                                <button onClick={() => setEditingArticle(null)} className="px-8 py-3 border border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all">Batal</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

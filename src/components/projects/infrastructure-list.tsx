@@ -3,10 +3,15 @@
 import { useState } from "react"
 import { InfrastructureProjectCard } from "./infra-project-card"
 import { Pagination } from "@/components/ui/pagination"
+import { Prisma } from "@prisma/client"
 
 const PROJECTS_PER_PAGE = 6
 
-export function InfrastructureList({ initialProjects }: { initialProjects: any[] }) {
+type ProjectWithRelations = Prisma.ProjectGetPayload<{
+    include: { manager: { select: { name: true } } }
+}>;
+
+export function InfrastructureList({ initialProjects }: { initialProjects: ProjectWithRelations[] }) {
     const [currentPage, setCurrentPage] = useState(1)
 
     // Pagination Logic

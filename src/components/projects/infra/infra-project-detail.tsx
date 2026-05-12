@@ -12,13 +12,14 @@ import { ProposalForm } from "./proposal-form"
 import { RkbForm } from "./rkb-form"
 import { DisbursementTracker } from "./disbursement-tracker"
 import { ExecutionPanel } from "./execution-panel"
+import { type SafeAny } from "@/lib/utils"
 
 function formatCurrency(value: number): string {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value)
 }
 
 interface InfraProjectDetailProps {
-    project: any
+    project: SafeAny
 }
 
 export function InfraProjectDetail({ project }: InfraProjectDetailProps) {
@@ -30,7 +31,7 @@ export function InfraProjectDetail({ project }: InfraProjectDetailProps) {
     }
 
     const rkbTotalBudget = project.rkbItems?.reduce(
-        (sum: number, item: any) => sum + (item.totalPrice || 0), 0
+        (sum: number, item: SafeAny) => sum + (item.totalPrice || 0), 0
     ) || 0
 
     return (
@@ -67,66 +68,78 @@ export function InfraProjectDetail({ project }: InfraProjectDetailProps) {
             {/* Project Info Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {project.category && (
-                    <Card>
-                        <CardContent className="flex items-center gap-2 p-3">
-                            <HugeiconsIcon icon={Building01Icon} className="size-4 text-muted-foreground" />
+                    <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                        <CardContent className="flex items-center gap-3 p-4">
+                            <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                <HugeiconsIcon icon={Building01Icon} className="size-5 text-primary" />
+                            </div>
                             <div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kategori</p>
-                                <p className="text-sm font-medium">{project.category}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Kategori</p>
+                                <p className="text-sm font-bold text-slate-800">{project.category as string}</p>
                             </div>
                         </CardContent>
                     </Card>
                 )}
                 {project.location && (
-                    <Card>
-                        <CardContent className="flex items-center gap-2 p-3">
-                            <HugeiconsIcon icon={LocationIcon} className="size-4 text-muted-foreground" />
+                    <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                        <CardContent className="flex items-center gap-3 p-4">
+                            <div className="size-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                                <HugeiconsIcon icon={LocationIcon} className="size-5 text-orange-600" />
+                            </div>
                             <div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lokasi</p>
-                                <p className="text-sm font-medium">{project.location}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Lokasi</p>
+                                <p className="text-sm font-bold text-slate-800">{project.location as string}</p>
                             </div>
                         </CardContent>
                     </Card>
                 )}
                 {project.requestedBy && (
-                    <Card>
-                        <CardContent className="flex items-center gap-2 p-3">
-                            <HugeiconsIcon icon={UserIcon} className="size-4 text-muted-foreground" />
+                    <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                        <CardContent className="flex items-center gap-3 p-4">
+                            <div className="size-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                                <HugeiconsIcon icon={UserIcon} className="size-5 text-blue-600" />
+                            </div>
                             <div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pemohon</p>
-                                <p className="text-sm font-medium">{project.requestedBy}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pemohon</p>
+                                <p className="text-sm font-bold text-slate-800">{project.requestedBy as string}</p>
                             </div>
                         </CardContent>
                     </Card>
                 )}
                 {project.estimatedBudget && (
-                    <Card>
-                        <CardContent className="flex items-center gap-2 p-3">
-                            <span className="text-muted-foreground text-sm font-bold">Rp</span>
+                    <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                        <CardContent className="flex items-center gap-3 p-4">
+                            <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                                <span className="font-bold text-emerald-600">Rp</span>
+                            </div>
                             <div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Estimasi</p>
-                                <p className="text-sm font-medium">{formatCurrency(project.estimatedBudget)}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estimasi</p>
+                                <p className="text-sm font-bold text-slate-800">{formatCurrency(project.estimatedBudget as number)}</p>
                             </div>
                         </CardContent>
                     </Card>
                 )}
-                <Card>
-                    <CardContent className="flex items-center gap-2 p-3">
-                        <HugeiconsIcon icon={UserIcon} className="size-4 text-muted-foreground" />
+                <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                    <CardContent className="flex items-center gap-3 p-4">
+                        <div className="size-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                            <HugeiconsIcon icon={UserIcon} className="size-5 text-purple-600" />
+                        </div>
                         <div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">PIC</p>
-                            <p className="text-sm font-medium">{project.manager?.name || "-"}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PIC</p>
+                            <p className="text-sm font-bold text-slate-800">{(project.manager as SafeAny)?.name as string || "-"}</p>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="flex items-center gap-2 p-3">
-                        <HugeiconsIcon icon={Calendar03Icon} className="size-4 text-muted-foreground" />
+                <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                    <CardContent className="flex items-center gap-3 p-4">
+                        <div className="size-10 rounded-xl bg-red-50 flex items-center justify-center">
+                            <HugeiconsIcon icon={Calendar03Icon} className="size-5 text-red-600" />
+                        </div>
                         <div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Deadline</p>
-                            <p className="text-sm font-medium">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deadline</p>
+                            <p className="text-sm font-bold text-slate-800">
                                 {project.endDate
-                                    ? new Date(project.endDate).toLocaleDateString("id-ID")
+                                    ? new Date(project.endDate as string).toLocaleDateString("id-ID")
                                     : "-"}
                             </p>
                         </div>
@@ -135,7 +148,7 @@ export function InfraProjectDetail({ project }: InfraProjectDetailProps) {
             </div>
 
             {/* Phase Stepper */}
-            <Card>
+            <Card className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                 <CardContent className="p-6">
                     <PhaseStepper
                         currentPhase={currentPhase}

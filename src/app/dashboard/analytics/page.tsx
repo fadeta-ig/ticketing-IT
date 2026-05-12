@@ -7,7 +7,6 @@ import { TrendChart } from "@/components/analytics/trend-chart";
 import { ReportGenerator } from "@/components/analytics/report-generator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-    ChartBarLineIcon,
     ArrowLeft01Icon,
     Analytics01Icon
 } from "@hugeicons/core-free-icons";

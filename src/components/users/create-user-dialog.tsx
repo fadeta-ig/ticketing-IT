@@ -40,7 +40,7 @@ export function CreateUserDialog() {
             await createUserAction(formData)
             toast.success("Pengguna Berhasil Ditambahkan")
             setOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menambahkan pengguna: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

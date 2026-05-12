@@ -42,6 +42,14 @@ export default async function SettingsPage() {
                 href: "/dashboard/settings/sla",
                 color: "text-emerald-500",
                 bg: "bg-emerald-50"
+            },
+            {
+                title: "Sistem",
+                description: "Konfigurasi variabel sistem global dan notifikasi WhatsApp.",
+                icon: Settings01Icon,
+                href: "/dashboard/settings/system",
+                color: "text-rose-500",
+                bg: "bg-rose-50"
             }
         ] : [])
     ]

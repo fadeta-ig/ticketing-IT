@@ -8,7 +8,6 @@ import {
     MoreVerticalIcon,
     UserIcon,
     UserEdit01Icon,
-    MailIcon,
     SearchIcon
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
@@ -34,11 +33,11 @@ import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { deleteUserAction } from "@/app/actions/user.actions"
 import { toast } from "sonner"
 import { useEffect } from "react"
-import { formatErrorMessage } from "@/lib/utils"
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 const ITEMS_PER_PAGE = 10
 
-export function UserList({ initialUsers }: { initialUsers: any[] }) {
+export function UserList({ initialUsers, currentRole = "ADMIN" }: { initialUsers: SafeAny[]; currentRole?: string }) {
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [userToDelete, setUserToDelete] = useState<string | null>(null)
@@ -68,7 +67,7 @@ export function UserList({ initialUsers }: { initialUsers: any[] }) {
             await deleteUserAction(userToDelete)
             toast.success("Pengguna berhasil dihapus")
             setUserToDelete(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menghapus pengguna: " + formatErrorMessage(error))
         } finally {
             setIsDeleting(false)
@@ -141,17 +140,21 @@ export function UserList({ initialUsers }: { initialUsers: any[] }) {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-[160px]">
-                                                    <DropdownMenuItem onClick={() => setUserToEdit(user)}>
-                                                        <HugeiconsIcon icon={UserEdit01Icon} className="mr-2 size-4" />
-                                                        Edit Profil
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setUserToDelete(user.id)}
-                                                        className="text-red-500 focus:text-red-500 focus:bg-red-50"
-                                                    >
-                                                        <HugeiconsIcon icon={Delete02Icon} className="mr-2 size-4" />
-                                                        Hapus
-                                                    </DropdownMenuItem>
+                                                    {(currentRole === "ADMIN" || (currentRole === "STAFF" && user.role === "USER")) && (
+                                                        <DropdownMenuItem onClick={() => setUserToEdit(user)}>
+                                                            <HugeiconsIcon icon={UserEdit01Icon} className="mr-2 size-4" />
+                                                            Edit Profil
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {currentRole === "ADMIN" && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => setUserToDelete(user.id as string)}
+                                                            className="text-red-500 focus:text-red-500 focus:bg-red-50"
+                                                        >
+                                                            <HugeiconsIcon icon={Delete02Icon} className="mr-2 size-4" />
+                                                            Hapus
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

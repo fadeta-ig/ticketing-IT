@@ -15,8 +15,8 @@ export async function upsertWebEnvironmentAction(projectId: string, data: {
         revalidatePath("/dashboard/web-dev");
         revalidatePath(`/dashboard/projects/${projectId}`); // Assuming there's a detailed view if applicable
         return env;
-    } catch (error: any) {
-        throw new Error(error.message || "Failed to update web environment.");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Failed to update web environment.");
     }
 }
 
@@ -25,8 +25,8 @@ export async function createProjectTaskAction(projectId: string, title: string, 
         const task = await ProjectService.createProjectTask(projectId, title, assigneeId || undefined);
         revalidatePath("/dashboard/web-dev");
         return task;
-    } catch (error: any) {
-        throw new Error(error.message || "Failed to create project task.");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Failed to create project task.");
     }
 }
 
@@ -35,8 +35,8 @@ export async function toggleProjectTaskAction(id: string, isCompleted: boolean) 
         const task = await ProjectService.toggleProjectTask(id, isCompleted);
         revalidatePath("/dashboard/web-dev");
         return task;
-    } catch (error: any) {
-        throw new Error(error.message || "Failed to update project task status.");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Failed to update project task status.");
     }
 }
 
@@ -45,7 +45,7 @@ export async function deleteProjectTaskAction(id: string) {
         await ProjectService.deleteProjectTask(id);
         revalidatePath("/dashboard/web-dev");
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Failed to delete project task.");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Failed to delete project task.");
     }
 }

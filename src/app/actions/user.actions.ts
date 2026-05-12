@@ -51,16 +51,21 @@ export async function createUserAction(formData: FormData) {
             });
         }
         revalidatePath("/dashboard/settings/users");
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal membuat pengguna");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal membuat pengguna");
     }
 }
 
 export async function updateUserAction(id: string, formData: FormData) {
-    await checkAdmin();
+    const session = await getServerSession(authOptions);
+    const currentRole = session?.user?.role;
+    
+    if (currentRole !== "ADMIN" && currentRole !== "STAFF") {
+        throw new Error("Akses ditolak. Anda bukan Admin atau Staff.");
+    }
 
     try {
         const rawData = {
@@ -69,6 +74,17 @@ export async function updateUserAction(id: string, formData: FormData) {
             role: formData.get("role") as Role,
             password: (formData.get("password") as string) || undefined,
         };
+
+        const targetUser = await UserService.getUserById(id);
+        if (!targetUser) throw new Error("Pengguna tidak ditemukan");
+
+        if (currentRole === "STAFF") {
+            if (targetUser.role !== "USER") {
+                throw new Error("Staff hanya dapat memodifikasi akun pengguna biasa (USER).");
+            }
+            // Ensure STAFF cannot escalate privileges
+            rawData.role = "USER";
+        }
 
         const validated = userSchema.partial().parse(rawData);
         const user = await UserService.updateUser(id, validated);
@@ -84,11 +100,11 @@ export async function updateUserAction(id: string, formData: FormData) {
             });
         }
         revalidatePath("/dashboard/settings/users");
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal memperbarui pengguna");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal memperbarui pengguna");
     }
 }
 
@@ -108,8 +124,8 @@ export async function deleteUserAction(id: string) {
             });
         }
         revalidatePath("/dashboard/settings/users");
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menghapus pengguna");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menghapus pengguna");
     }
 }
 
@@ -142,11 +158,11 @@ export async function updateSelfAction(formData: FormData) {
 
         revalidatePath("/dashboard/settings/profile");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal memperbarui profil");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal memperbarui profil");
     }
 }
 
@@ -189,8 +205,8 @@ export async function changePasswordAction(formData: FormData) {
         });
 
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal mengubah password");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal mengubah password");
     }
 }
 

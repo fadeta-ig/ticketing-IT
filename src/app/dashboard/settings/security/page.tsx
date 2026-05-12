@@ -27,7 +27,7 @@ export default function SecuritySettingsPage() {
             // Clear form
             const form = e.target as HTMLFormElement
             form.reset()
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal mengubah password: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

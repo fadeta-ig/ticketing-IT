@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Delete02Icon } from "@hugeicons/core-free-icons"
 import { Plus } from "lucide-react"
+import { Prisma } from "@prisma/client"
 
-export function ProjectTasksList({ project }: { project: any }) {
+type ProjectWithTasks = Prisma.ProjectGetPayload<{
+    include: { projectTasks: true }
+}>;
+
+export function ProjectTasksList({ project }: { project: ProjectWithTasks }) {
     const tasks = project.projectTasks || []
     const [isPending, startTransition] = useTransition()
     const [newTaskTitle, setNewTaskTitle] = useState("")
@@ -21,8 +26,8 @@ export function ProjectTasksList({ project }: { project: any }) {
                 await createProjectTaskAction(project.id, newTaskTitle)
                 setNewTaskTitle("")
                 toast.success("Tugas ditambahkan")
-            } catch (error: any) {
-                toast.error(error.message)
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : "Terjadi kesalahan")
             }
         })
     }
@@ -31,8 +36,8 @@ export function ProjectTasksList({ project }: { project: any }) {
         startTransition(async () => {
             try {
                 await toggleProjectTaskAction(id, isCompleted)
-            } catch (error: any) {
-                toast.error(error.message)
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : "Terjadi kesalahan")
             }
         })
     }
@@ -41,13 +46,13 @@ export function ProjectTasksList({ project }: { project: any }) {
         startTransition(async () => {
             try {
                 await deleteProjectTaskAction(id)
-            } catch (error: any) {
-                toast.error(error.message)
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : "Terjadi kesalahan")
             }
         })
     }
 
-    const progress = tasks.length > 0 ? Math.round((tasks.filter((t: any) => t.isCompleted).length / tasks.length) * 100) : 0
+    const progress = tasks.length > 0 ? Math.round((tasks.filter(t => t.isCompleted).length / tasks.length) * 100) : 0
 
     return (
         <div className="space-y-4">
@@ -75,7 +80,7 @@ export function ProjectTasksList({ project }: { project: any }) {
                 {tasks.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic text-center py-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">Belum ada tugas untuk proyek ini.</p>
                 ) : (
-                    tasks.map((task: any) => (
+                    tasks.map((task) => (
                         <div key={task.id} className="flex items-center gap-3 group bg-slate-50/50 p-2 rounded-lg border border-transparent hover:border-slate-200 transition-colors">
                             <input
                                 type="checkbox"

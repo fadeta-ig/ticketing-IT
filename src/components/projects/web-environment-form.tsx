@@ -6,8 +6,9 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { type SafeAny } from "@/lib/utils"
 
-export function WebEnvironmentForm({ project }: { project: any }) {
+export function WebEnvironmentForm({ project }: { project: SafeAny }) {
     const env = project.webEnvironment || {}
     const [isPending, startTransition] = useTransition()
     
@@ -28,8 +29,8 @@ export function WebEnvironmentForm({ project }: { project: any }) {
             try {
                 await upsertWebEnvironmentAction(project.id, formData)
                 toast.success("Web Environment diperbarui")
-            } catch (error: any) {
-                toast.error(error.message)
+            } catch (error: unknown) {
+                toast.error((error instanceof Error ? error.message : String(error)))
             }
         })
     }

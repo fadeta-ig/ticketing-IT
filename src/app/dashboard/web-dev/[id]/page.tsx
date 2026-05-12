@@ -55,39 +55,41 @@ export default async function WebDevDetailPage(props: { params: Promise<{ id: st
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
-                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Deskripsi Proyek</h3>
-                        <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap">
+                    <div className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-6 overflow-hidden relative group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 relative z-10">Deskripsi Proyek</h3>
+                        <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap relative z-10">
                             {project.description || "Tidak ada deskripsi yang ditambahkan untuk proyek ini."}
                         </p>
                     </div>
 
-                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5">
+                    <div className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-5">
                         <WebEnvironmentForm project={project} />
                     </div>
 
-                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-5">
+                    <div className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-5">
                         <ProjectTasksList project={project} />
                     </div>
                 </div>
 
                 <div className="space-y-6">
-                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-5">
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Informasi Proyek</h3>
+                    <div className="rounded-2xl border border-white/40 bg-white/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-6 space-y-6 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 relative z-10">Informasi Proyek</h3>
                         
-                        <div>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1"><HugeiconsIcon icon={UserIcon} className="size-3.5"/>PIC Proyek</span>
-                            <p className="text-sm font-medium">{project.manager?.name || "Belum ditentukan"}</p>
+                        <div className="relative z-10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><HugeiconsIcon icon={UserIcon} className="size-3.5"/>PIC Proyek</span>
+                            <p className="text-sm font-bold text-slate-800">{project.manager?.name || "Belum ditentukan"}</p>
                         </div>
                         
-                        <div>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1"><HugeiconsIcon icon={ComputerIcon} className="size-3.5"/>Target Environment</span>
-                            <p className="text-sm font-medium">{project.environment || "—"}</p>
+                        <div className="relative z-10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><HugeiconsIcon icon={ComputerIcon} className="size-3.5"/>Target Environment</span>
+                            <p className="text-sm font-bold text-slate-800">{project.environment || "—"}</p>
                         </div>
                         
-                        <div>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1"><HugeiconsIcon icon={Calendar01Icon} className="size-3.5"/>Dibuat Pada</span>
-                            <p className="text-sm font-medium">
+                        <div className="relative z-10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><HugeiconsIcon icon={Calendar01Icon} className="size-3.5"/>Dibuat Pada</span>
+                            <p className="text-sm font-bold text-slate-800">
                                 {new Date(project.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                         </div>

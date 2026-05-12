@@ -10,11 +10,11 @@ import { Pagination } from "@/components/ui/pagination"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { toggleTaskCompletionAction, deleteTaskAction } from "@/app/actions/task.actions"
 import { toast } from "sonner"
-import { cn, formatErrorMessage } from "@/lib/utils"
+import { cn, formatErrorMessage, type SafeAny } from "@/lib/utils"
 
 const ITEMS_PER_PAGE = 6
 
-export function TaskChecklist({ tasks }: { tasks: any[] }) {
+export function TaskChecklist({ tasks }: { tasks: SafeAny[] }) {
     const [currentPage, setCurrentPage] = useState(1)
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -28,7 +28,7 @@ export function TaskChecklist({ tasks }: { tasks: any[] }) {
         try {
             await toggleTaskCompletionAction(id, isCompleted)
             toast.success(isCompleted ? "Tugas selesai" : "Tugas dibuka kembali")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal memperbarui tugas: " + formatErrorMessage(error))
         }
     }
@@ -42,7 +42,7 @@ export function TaskChecklist({ tasks }: { tasks: any[] }) {
             toast.success("Tugas dihapus")
             setTaskToDelete(null)
             setTaskToDelete(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menghapus tugas: " + formatErrorMessage(error))
         } finally {
             setIsDeleting(false)

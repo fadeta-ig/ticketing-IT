@@ -8,9 +8,11 @@ import { redirect } from "next/navigation"
 export default async function UserManagementPage() {
     const session = await getServerSession(authOptions)
 
-    if (session?.user?.role !== "ADMIN") {
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "STAFF") {
         redirect("/dashboard")
     }
+
+    const isAdmin = session?.user?.role === "ADMIN"
 
     const users = await UserService.getAllUsers()
 
@@ -21,10 +23,10 @@ export default async function UserManagementPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Manajemen Pengguna</h2>
                     <p className="text-muted-foreground italic">Kelola akun, peran, dan akses pengguna dalam sistem IT Dashboard.</p>
                 </div>
-                <CreateUserDialog />
+                {isAdmin && <CreateUserDialog />}
             </div>
 
-            <UserList initialUsers={users} />
+            <UserList initialUsers={users} currentRole={session?.user?.role as string} />
         </div>
     )
 }

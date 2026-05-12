@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { AuditService } from "@/services/audit.service";
+import { NotificationService } from "@/services/notification.service";
 import { z } from "zod";
+import prisma from "@/lib/prisma";
 
 const INFRA_PATH = "/dashboard/infrastructure";
 
@@ -48,8 +50,8 @@ export async function saveProposalAction(projectId: string, formData: FormData) 
         await InfraWorkflowService.upsertProposal(projectId, data);
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyimpan proposal");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyimpan proposal");
     }
 }
 
@@ -66,8 +68,8 @@ export async function submitProposalAction(projectId: string) {
         });
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal mengajukan proposal");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal mengajukan proposal");
     }
 }
 
@@ -82,10 +84,20 @@ export async function approveProposalAction(projectId: string) {
             details: `Proposal disetujui oleh ${user.name}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `Proposal "${project?.name}" DISETUJUI`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyetujui proposal");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyetujui proposal");
     }
 }
 
@@ -100,10 +112,20 @@ export async function rejectProposalAction(projectId: string, reason: string) {
             details: `Proposal ditolak: ${reason}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `Proposal "${project?.name}" DITOLAK`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menolak proposal");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menolak proposal");
     }
 }
 
@@ -128,8 +150,8 @@ export async function saveRkbAction(projectId: string, formData: FormData) {
         await InfraWorkflowService.upsertRkbSubmission(projectId, data);
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyimpan RKB");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyimpan RKB");
     }
 }
 
@@ -148,11 +170,11 @@ export async function addRkbItemAction(projectId: string, formData: FormData) {
         await InfraWorkflowService.addRkbItem(projectId, data);
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal menambah item RKB");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menambah item RKB");
     }
 }
 
@@ -161,8 +183,8 @@ export async function removeRkbItemAction(itemId: string, projectId: string) {
         await InfraWorkflowService.removeRkbItem(itemId);
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menghapus item RKB");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menghapus item RKB");
     }
 }
 
@@ -179,8 +201,8 @@ export async function submitRkbAction(projectId: string) {
         });
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal mengajukan RKB");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal mengajukan RKB");
     }
 }
 
@@ -195,10 +217,20 @@ export async function approveRkbAction(projectId: string) {
             details: `RKB disetujui oleh ${user.name}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `RKB "${project?.name}" DISETUJUI`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyetujui RKB");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyetujui RKB");
     }
 }
 
@@ -213,10 +245,20 @@ export async function rejectRkbAction(projectId: string, reason: string) {
             details: `RKB ditolak: ${reason}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `RKB "${project?.name}" DITOLAK`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menolak RKB");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menolak RKB");
     }
 }
 
@@ -247,8 +289,8 @@ export async function saveDisbursementAction(projectId: string, formData: FormDa
         });
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyimpan pencairan dana");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyimpan pencairan dana");
     }
 }
 
@@ -265,8 +307,8 @@ export async function submitDisbursementAction(projectId: string) {
         });
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal mengajukan pencairan");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal mengajukan pencairan");
     }
 }
 
@@ -281,10 +323,20 @@ export async function approveDisbursementAction(projectId: string) {
             details: `Pencairan dana disetujui oleh ${user.name}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `Pencairan "${project?.name}" DISETUJUI`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyetujui pencairan");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyetujui pencairan");
     }
 }
 
@@ -299,10 +351,20 @@ export async function rejectDisbursementAction(projectId: string, reason: string
             details: `Pencairan dana ditolak: ${reason}`,
             userId: user.id,
         });
+        // WA Notification
+        try {
+            const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+            await NotificationService.sendWhatsAppNotification({
+                id: projectId,
+                title: `Pencairan "${project?.name}" DITOLAK`,
+                priority: "HIGH",
+                creatorName: user.name || "Admin",
+            });
+        } catch { /* non-critical */ }
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menolak pencairan");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menolak pencairan");
     }
 }
 
@@ -341,11 +403,11 @@ export async function addExecutionLogAction(projectId: string, formData: FormDat
 
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal menambah log eksekusi");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menambah log eksekusi");
     }
 }
 
@@ -362,7 +424,7 @@ export async function completeProjectAction(projectId: string) {
         });
         revalidateInfra(projectId);
         return { success: true };
-    } catch (error: any) {
-        throw new Error(error.message || "Gagal menyelesaikan proyek");
+    } catch (error: unknown) {
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal menyelesaikan proyek");
     }
 }

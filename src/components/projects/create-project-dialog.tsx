@@ -49,7 +49,7 @@ export function CreateProjectDialog({ defaultType }: { defaultType: "INFRASTRUCT
             await createProjectAction(formData)
             toast.success("Proyek Berhasil Dibuat")
             setOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal membuat proyek: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

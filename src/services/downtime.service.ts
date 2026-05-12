@@ -1,10 +1,11 @@
 import prisma from "@/lib/prisma";
+import { DowntimeReason } from "@prisma/client";
 
 export class DowntimeService {
     static async recordDowntime(data: {
         startTime: Date;
         endTime?: Date;
-        reason: any; // Keep any for enum if not imported, or use DowntimeReason
+        reason: DowntimeReason;
         details?: string;
     }) {
         return await prisma.downtime.create({
@@ -38,11 +39,11 @@ export class DowntimeService {
             uptimePercentage: Math.max(0, Math.min(100, Number(uptimePercentage.toFixed(2)))),
             incidentCount: downtimes.length,
             reasonBreakdown: {
-                POWER: (downtimes as any[]).filter(d => d.reason === "POWER").length,
-                ISP: (downtimes as any[]).filter(d => d.reason === "ISP").length,
-                HARDWARE: (downtimes as any[]).filter(d => d.reason === "HARDWARE").length,
-                MAINTENANCE: (downtimes as any[]).filter(d => d.reason === "MAINTENANCE").length,
-                OTHER: (downtimes as any[]).filter(d => d.reason === "OTHER").length,
+                POWER: downtimes.filter(d => d.reason === "POWER").length,
+                ISP: downtimes.filter(d => d.reason === "ISP").length,
+                HARDWARE: downtimes.filter(d => d.reason === "HARDWARE").length,
+                MAINTENANCE: downtimes.filter(d => d.reason === "MAINTENANCE").length,
+                OTHER: downtimes.filter(d => d.reason === "OTHER").length,
             }
         };
     }

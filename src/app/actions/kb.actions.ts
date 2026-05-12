@@ -33,9 +33,9 @@ export async function createKbCategoryAction(data: { name: string; description?:
         await KbService.createCategory(validated);
         revalidatePath("/dashboard/knowledge-base");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) throw new Error(error.issues[0].message);
-        throw new Error(error.message || "Gagal membuat kategori");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal membuat kategori");
     }
 }
 
@@ -82,9 +82,9 @@ export async function createKbArticleAction(data: {
 
         revalidatePath("/dashboard/knowledge-base");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) throw new Error(error.issues[0].message);
-        throw new Error(error.message || "Gagal membuat artikel");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal membuat artikel");
     }
 }
 
@@ -118,4 +118,12 @@ export async function searchKbArticlesAction(query: string) {
 
 export async function getKbStatsAction() {
     return await KbService.getStats();
+}
+
+export async function incrementKbViewCountAction(id: string) {
+    try {
+        await KbService.incrementViewCount(id);
+    } catch {
+        // non-critical — do not throw to avoid breaking the read experience
+    }
 }

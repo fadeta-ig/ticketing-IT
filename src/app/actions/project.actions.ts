@@ -62,11 +62,11 @@ export async function createProjectAction(formData: FormData) {
         revalidatePath("/dashboard/infrastructure");
         revalidatePath("/dashboard/web-dev");
         revalidatePath("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             throw new Error(error.issues[0].message);
         }
-        throw new Error(error.message || "Gagal membuat proyek");
+        throw new Error((error instanceof Error ? error.message : String(error)) || "Gagal membuat proyek");
     }
 }
 

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 export class UserService {
@@ -41,11 +41,11 @@ export class UserService {
         role: Role;
         password?: string;
     }>) {
-        const updateData: any = { ...data };
+        const { password, ...rest } = data;
+        const updateData: Prisma.UserUpdateInput = { ...rest };
 
-        if (data.password) {
-            updateData.passwordHash = await bcrypt.hash(data.password, 10);
-            delete updateData.password;
+        if (password) {
+            updateData.passwordHash = await bcrypt.hash(password, 10);
         }
 
         return await prisma.user.update({

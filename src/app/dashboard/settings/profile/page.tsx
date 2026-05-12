@@ -27,7 +27,7 @@ export default function ProfileSettingsPage() {
             await updateSelfAction(formData)
             await update() // Update client-side session
             toast.success("Profil berhasil diperbarui")
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal memperbarui profil: " + formatErrorMessage(error))
         } finally {
             setIsLoading(false)

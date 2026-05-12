@@ -25,6 +25,7 @@ import { updateProjectStatusAction, deleteProjectAction } from "@/app/actions/pr
 import { toast } from "sonner"
 import { formatErrorMessage } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { ProjectStatus, Prisma } from "@prisma/client"
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
     PLANNING: {
@@ -54,13 +55,15 @@ const STATUS_OPTIONS = [
 
 const ROWS_PER_PAGE = 10
 
+type ProjectWithRelations = Prisma.ProjectGetPayload<{
+    include: { manager: { select: { name: true } } }
+}>;
 
-
-export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
+export function KanbanBoard({ initialProjects }: { initialProjects: ProjectWithRelations[] }) {
     const router = useRouter()
     const [currentPage, setCurrentPage] = useState(1)
     const [filterStatus, setFilterStatus] = useState<string | null>(null)
-    const [projectToDelete, setProjectToDelete] = useState<any | null>(null)
+    const [projectToDelete, setProjectToDelete] = useState<ProjectWithRelations | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
     const filteredProjects = filterStatus
@@ -75,9 +78,9 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
 
     const handleMove = async (id: string, status: string) => {
         try {
-            await updateProjectStatusAction(id, status as any)
+            await updateProjectStatusAction(id, status as ProjectStatus)
             toast.success(`Status diperbarui ke ${STATUS_MAP[status]?.label || status}`)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal memperbarui: " + formatErrorMessage(error))
         }
     }
@@ -89,7 +92,7 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
             await deleteProjectAction(projectToDelete.id)
             toast.success("Proyek berhasil dihapus")
             setProjectToDelete(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menghapus: " + formatErrorMessage(error))
         } finally {
             setIsDeleting(false)
@@ -139,13 +142,14 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">PIC</th>
                             <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Env</th>
                             <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Diperbarui</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Tenggat Waktu</th>
                             <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground w-12"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y">
                         {paginatedProjects.length > 0 ? paginatedProjects.map((project) => {
                             const status = STATUS_MAP[project.status] || STATUS_MAP.PLANNING
+                            const isOverdue = project.endDate && new Date(project.endDate) < new Date() && project.status !== "COMPLETED";
                             return (
                                 <tr
                                     key={project.id}
@@ -187,9 +191,13 @@ export function KanbanBoard({ initialProjects }: { initialProjects: any[] }) {
                                         </Badge>
                                     </td>
                                     <td className="px-4 py-3 text-right hidden md:table-cell">
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                            {new Date(project.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                                        </span>
+                                        {project.endDate ? (
+                                            <span className={`text-xs whitespace-nowrap font-medium ${isOverdue ? 'text-red-600 bg-red-50 px-2 py-1 rounded-md' : 'text-muted-foreground'}`}>
+                                                {new Date(project.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">—</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenu>

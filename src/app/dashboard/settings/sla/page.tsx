@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { getSlaPolicesAction, upsertSlaPolicyAction } from "@/app/actions/sla.actions";
+import { toast } from "sonner";
 
 const PRIORITY_LABELS: Record<string, { label: string; color: string }> = {
     URGENT: { label: "Urgent", color: "bg-red-500" },
@@ -49,8 +50,8 @@ export default function SlaSettingsPage() {
                 });
                 setSavedMsg(`Kebijakan SLA ${policy.priority} berhasil disimpan!`);
                 setTimeout(() => setSavedMsg(""), 3000);
-            } catch (err: any) {
-                alert(err.message);
+            } catch (err: unknown) {
+                toast.error(err instanceof Error ? err.message : "Gagal menyimpan SLA");
             }
         });
     }

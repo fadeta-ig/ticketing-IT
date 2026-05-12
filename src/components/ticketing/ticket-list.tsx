@@ -6,10 +6,9 @@ import {
     MoreVerticalIcon,
     Delete02Icon,
     Search01Icon,
-    Ticket01Icon,
-    PlusSignIcon,
     FilterIcon,
-    ViewIcon
+    ViewIcon,
+    Cancel01Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -29,50 +28,86 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Pagination } from "@/components/ui/pagination"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { deleteTicketAction, updateTicketStatusAction } from "@/app/actions/ticket.actions"
 import { toast } from "sonner"
-import { formatErrorMessage } from "@/lib/utils"
-
+import { formatErrorMessage, type SafeAny } from "@/lib/utils"
 import { useSession } from "next-auth/react"
 
 const ITEMS_PER_PAGE = 8
 
-export function TicketList({ initialTickets }: { initialTickets: any[] }) {
+const STATUS_OPTIONS = [
+    { value: "ALL", label: "Semua Status" },
+    { value: "OPEN", label: "Open" },
+    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "RESOLVED", label: "Resolved" },
+    { value: "CLOSED", label: "Closed" },
+]
+
+const PRIORITY_OPTIONS = [
+    { value: "ALL", label: "Semua Prioritas" },
+    { value: "URGENT", label: "Urgent" },
+    { value: "HIGH", label: "High" },
+    { value: "MEDIUM", label: "Medium" },
+    { value: "LOW", label: "Low" },
+]
+
+export function TicketList({ initialTickets }: { initialTickets: SafeAny[] }) {
     const { data: session } = useSession()
     const isAdmin = session?.user?.role === "ADMIN"
 
     const [searchQuery, setSearchQuery] = useState("")
+    const [filterStatus, setFilterStatus] = useState("ALL")
+    const [filterPriority, setFilterPriority] = useState("ALL")
     const [currentPage, setCurrentPage] = useState(1)
     const [ticketToDelete, setTicketToDelete] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showFilters, setShowFilters] = useState(false)
 
-    const filteredTickets = initialTickets.filter(ticket =>
-        ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.id.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const hasActiveFilter = filterStatus !== "ALL" || filterPriority !== "ALL"
 
-    // Pagination Logic
+    const filteredTickets = initialTickets.filter((ticket) => {
+        const matchesSearch =
+            ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ticket.id.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesStatus = filterStatus === "ALL" || ticket.status === filterStatus
+        const matchesPriority = filterPriority === "ALL" || ticket.priority === filterPriority
+        return matchesSearch && matchesStatus && matchesPriority
+    })
+
     const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE)
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
     const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
-    // Reset to page 1 when searching
+    // Reset to page 1 when any filter changes
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery])
+    }, [searchQuery, filterStatus, filterPriority])
+
+    const handleClearFilters = () => {
+        setFilterStatus("ALL")
+        setFilterPriority("ALL")
+        setSearchQuery("")
+    }
 
     const handleDelete = async () => {
         if (!ticketToDelete) return
         setIsDeleting(true)
-
         try {
             await deleteTicketAction(ticketToDelete)
             toast.success("Tiket Berhasil Dihapus")
             setTicketToDelete(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal menghapus tiket: " + formatErrorMessage(error))
         } finally {
             setIsDeleting(false)
@@ -81,9 +116,9 @@ export function TicketList({ initialTickets }: { initialTickets: any[] }) {
 
     const handleUpdateStatus = async (id: string, status: string) => {
         try {
-            await updateTicketStatusAction(id, status as any)
+            await updateTicketStatusAction(id, status as SafeAny)
             toast.success(`Status tiket diperbarui ke ${status}`)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Gagal memperbarui status: " + formatErrorMessage(error))
         }
     }
@@ -108,8 +143,9 @@ export function TicketList({ initialTickets }: { initialTickets: any[] }) {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="space-y-4">
+            {/* Search + Filter Bar */}
+            <div className="flex items-center gap-3">
                 <div className="relative flex-1">
                     <HugeiconsIcon icon={Search01Icon} className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -119,11 +155,73 @@ export function TicketList({ initialTickets }: { initialTickets: any[] }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" className="gap-2">
+                <Button
+                    variant={showFilters ? "default" : "outline"}
+                    className="gap-2 shrink-0 relative"
+                    onClick={() => setShowFilters((v) => !v)}
+                >
                     <HugeiconsIcon icon={FilterIcon} className="size-4" />
                     Filter
+                    {hasActiveFilter && (
+                        <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-primary text-[9px] text-white font-bold flex items-center justify-center">
+                            {(filterStatus !== "ALL" ? 1 : 0) + (filterPriority !== "ALL" ? 1 : 0)}
+                        </span>
+                    )}
                 </Button>
             </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+                <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-xl border border-dashed animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Status:</span>
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Prioritas:</span>
+                        <Select value={filterPriority} onValueChange={setFilterPriority}>
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {PRIORITY_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {hasActiveFilter && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                            onClick={handleClearFilters}
+                        >
+                            <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                            Reset
+                        </Button>
+                    )}
+
+                    <p className="text-[11px] text-muted-foreground ml-auto">
+                        {filteredTickets.length} tiket ditemukan
+                    </p>
+                </div>
+            )}
 
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardContent className="p-0">
@@ -178,15 +276,23 @@ export function TicketList({ initialTickets }: { initialTickets: any[] }) {
 
                                                         {isAdmin && (
                                                             <>
-                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "IN_PROGRESS")} className="cursor-pointer">
-                                                                    Kerjakan
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "RESOLVED")} className="cursor-pointer">
-                                                                    Selesaikan
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "CLOSED")} className="cursor-pointer">
-                                                                    Tutup
-                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                {ticket.status === "OPEN" && (
+                                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "IN_PROGRESS")} className="cursor-pointer">
+                                                                        Kerjakan
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {(ticket.status === "OPEN" || ticket.status === "IN_PROGRESS") && (
+                                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "RESOLVED")} className="cursor-pointer">
+                                                                        Selesaikan
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {ticket.status !== "CLOSED" && (
+                                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "CLOSED")} className="cursor-pointer">
+                                                                        Tutup
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuSeparator />
                                                                 <DropdownMenuItem
                                                                     onClick={() => setTicketToDelete(ticket.id)}
                                                                     className="text-red-500 focus:text-red-500 focus:bg-red-50 cursor-pointer"
@@ -205,7 +311,9 @@ export function TicketList({ initialTickets }: { initialTickets: any[] }) {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                                        Tidak ada tiket ditemukan.
+                                        {hasActiveFilter || searchQuery
+                                            ? "Tidak ada tiket yang sesuai dengan filter."
+                                            : "Tidak ada tiket ditemukan."}
                                     </TableCell>
                                 </TableRow>
                             )}
