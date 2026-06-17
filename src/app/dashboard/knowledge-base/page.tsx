@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction, incrementKbViewCountAction } from "@/app/actions/kb.actions";
+import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction, incrementKbViewCountAction, recordKbFeedbackAction } from "@/app/actions/kb.actions";
 import { useSession } from "next-auth/react";
 import dynamic from 'next/dynamic';
 import parse from 'html-react-parser';
@@ -48,6 +48,7 @@ export default function KnowledgeBasePage() {
     const [editCategoryId, setEditCategoryId] = useState("");
     const [editTags, setEditTags] = useState("");
     const [editPublished, setEditPublished] = useState(false);
+    const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
 
     useEffect(() => { loadData(); }, []);
 
@@ -71,8 +72,21 @@ export default function KnowledgeBasePage() {
 
     function handleViewArticle(article: Article) {
         setSelectedArticle(article);
+        setFeedbackGiven(null);
         incrementKbViewCountAction(article.id);
         setArticles((prev) => prev.map((a) => a.id === article.id ? { ...a, viewCount: a.viewCount + 1 } : a));
+    }
+
+    function handleFeedback(isHelpful: boolean) {
+        if (!selectedArticle || feedbackGiven) return;
+        setFeedbackGiven(isHelpful ? "helpful" : "not_helpful");
+        recordKbFeedbackAction(selectedArticle.id, isHelpful);
+        setArticles((prev) => prev.map((a) => {
+            if (a.id !== selectedArticle.id) return a;
+            return isHelpful
+                ? { ...a, helpfulCount: a.helpfulCount + 1 }
+                : { ...a, notHelpfulCount: a.notHelpfulCount + 1 };
+        }));
     }
 
     function handleOpenEdit(article: Article) {
@@ -413,12 +427,49 @@ export default function KnowledgeBasePage() {
                             {parse(selectedArticle.content)}
                         </div>
                         {selectedArticle.tags && (
-                            <div className="px-8 pb-8 flex flex-wrap gap-2">
+                            <div className="px-8 pb-6 flex flex-wrap gap-2">
                                 {selectedArticle.tags.split(",").map((tag) => (
                                     <span key={tag.trim()} className="text-[10px] font-bold uppercase tracking-widest bg-slate-50 border border-slate-100 text-slate-500 px-3 py-1.5 rounded-lg">#{tag.trim()}</span>
                                 ))}
                             </div>
                         )}
+                        {/* Helpful / Not Helpful — Feature 8 */}
+                        <div className="px-8 pb-8 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-bold text-slate-500 mb-3">Apakah artikel ini membantu?</p>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => handleFeedback(true)}
+                                    disabled={!!feedbackGiven}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                                        feedbackGiven === "helpful"
+                                            ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                            : feedbackGiven
+                                                ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                                                : "bg-white text-slate-600 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200"
+                                    }`}
+                                >
+                                    👍 Ya, Membantu
+                                    <span className="text-[10px] opacity-70">({selectedArticle.helpfulCount + (feedbackGiven === "helpful" ? 1 : 0)})</span>
+                                </button>
+                                <button
+                                    onClick={() => handleFeedback(false)}
+                                    disabled={!!feedbackGiven}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                                        feedbackGiven === "not_helpful"
+                                            ? "bg-red-50 text-red-600 border-red-200"
+                                            : feedbackGiven
+                                                ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                                                : "bg-white text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                                    }`}
+                                >
+                                    👎 Kurang Membantu
+                                    <span className="text-[10px] opacity-70">({selectedArticle.notHelpfulCount + (feedbackGiven === "not_helpful" ? 1 : 0)})</span>
+                                </button>
+                            </div>
+                            {feedbackGiven && (
+                                <p className="text-[11px] text-emerald-600 font-medium mt-2 italic">Terima kasih atas feedback Anda! 🙏</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

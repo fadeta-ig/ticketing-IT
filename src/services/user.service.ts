@@ -9,6 +9,15 @@ export class UserService {
         });
     }
 
+    /** Get only ADMIN and STAFF users (for ticket assignment dropdown) */
+    static async getStaffUsers() {
+        return await prisma.user.findMany({
+            where: { role: { in: [Role.ADMIN, Role.STAFF] } },
+            select: { id: true, name: true, role: true },
+            orderBy: { name: 'asc' },
+        });
+    }
+
     static async getUserById(id: string) {
         return await prisma.user.findUnique({
             where: { id }

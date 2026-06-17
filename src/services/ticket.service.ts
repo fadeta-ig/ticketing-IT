@@ -62,7 +62,7 @@ export class TicketService {
         // Get Downtime Stats
         const downtimeStats = await DowntimeService.getDowntimeStats(30);
 
-        // 1. Optimize Ticket Counts (Delegated to DB Layer)
+        // 1. Ticket Counts
         const [totalTickets, resolvedCount] = await Promise.all([
             prisma.ticket.count({
                 where: { createdAt: { gte: last30Days } }
@@ -75,7 +75,7 @@ export class TicketService {
             })
         ]);
 
-        // 2. Optimize Category Count via Prisma GroupBy (Eliminate .filter & any)
+        // 2. Category Distribution via Prisma GroupBy
         const categoryGroup = await prisma.ticket.groupBy({
             by: ['category'],
             where: { createdAt: { gte: last30Days } },
@@ -91,7 +91,7 @@ export class TicketService {
             else if (cat === "OTHER") categoryDistribution.OTHER = group._count.category;
         });
 
-        // 3. Optimize MTTR & SLA memory limits (Select ONLY required fields, not whole tables)
+        // 3. SLA Compliance using actual SlaPolicy from DB (not hardcoded limits)
         const resolvedTickets = await prisma.ticket.findMany({
             where: {
                 createdAt: { gte: last30Days },
@@ -100,7 +100,9 @@ export class TicketService {
             select: {
                 createdAt: true,
                 updatedAt: true,
-                priority: true
+                priority: true,
+                dueAt: true,
+                resolvedAt: true,
             }
         });
 
@@ -108,11 +110,17 @@ export class TicketService {
         let slaCompliantCount = 0;
 
         resolvedTickets.forEach(ticket => {
-            const resTime = (ticket.updatedAt.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
-            totalResolutionTime += resTime;
+            const resolvedTime = ticket.resolvedAt ?? ticket.updatedAt;
+            const resTimeHours = (resolvedTime.getTime() - ticket.createdAt.getTime()) / (1000 * 60 * 60);
+            totalResolutionTime += resTimeHours;
 
-            const limit = (ticket.priority === Priority.HIGH || ticket.priority === Priority.URGENT) ? 24 : 48;
-            if (resTime <= limit) slaCompliantCount++;
+            // Use dueAt from DB (set by SlaService.calculateDueDate) for accurate compliance
+            if (ticket.dueAt) {
+                if (resolvedTime <= ticket.dueAt) slaCompliantCount++;
+            } else {
+                // Fallback: if dueAt was never set, count as compliant
+                slaCompliantCount++;
+            }
         });
 
         const mttr = resolvedCount > 0 ? (totalResolutionTime / resolvedCount).toFixed(1) : "0";

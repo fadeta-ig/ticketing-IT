@@ -28,7 +28,7 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function toggleTaskCompletionAction(id: string, isCompleted: boolean) {
-    await TaskService.toggleTaskCompletion(id, isCompleted);
+    await TaskService.toggleTask(id, isCompleted);
     revalidatePath("/dashboard/tasks");
     revalidatePath("/dashboard");
 }

@@ -141,11 +141,36 @@ export async function updateTicketStatusAction(id: string, status: TicketStatus,
 }
 
 export async function assignTicketAction(id: string, assigneeId: string) {
-    await TicketService.updateTicket(id, {
+    const session = await getServerSession(authOptions);
+    const ticket = await TicketService.updateTicket(id, {
         assigneeId,
         status: TicketStatus.IN_PROGRESS
     });
+
+    // Audit trail
+    if (session?.user?.id) {
+        await AuditService.logAction({
+            action: "ASSIGN",
+            entity: "TICKET",
+            entityId: id,
+            details: `Tiket di-assign ke ${assigneeId} oleh ${session.user.name}`,
+            userId: session.user.id,
+        });
+    }
+
+    // WA Notification to assignee (non-critical)
+    try {
+        await NotificationService.sendWhatsAppNotification({
+            id,
+            title: `Tiket "${ticket.title}" telah di-assign kepada Anda`,
+            priority: ticket.priority,
+            creatorName: session?.user?.name || "Admin",
+        });
+    } catch { /* non-critical */ }
+
     revalidatePath("/dashboard/ticketing");
+    revalidatePath(`/dashboard/ticketing/${id}`);
+    revalidatePath("/dashboard");
 }
 
 export async function updateTicketAction(id: string, data: any) {

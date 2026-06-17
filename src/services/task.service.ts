@@ -52,10 +52,6 @@ export class TaskService {
         });
     }
 
-    static async toggleTaskCompletion(id: string, isCompleted: boolean) {
-        return await this.toggleTask(id, isCompleted);
-    }
-
     static async resetRecurringTasks() {
         // Logic to reset DAILY tasks at midnight, etc.
         // This could be run by a cron job
