@@ -154,7 +154,7 @@ export default async function DashboardPage() {
                     <CardContent className="p-0">
                         <div className="divide-y divide-slate-50">
                             {tickets.length > 0 ? tickets.slice(0, 4).map((ticket) => (
-                                <div key={ticket.id} className="group flex items-center gap-3 px-6 py-3.5 hover:bg-slate-50/50 transition-colors">
+                                <Link href={`/dashboard/ticketing/${ticket.id}`} key={ticket.id} className="group flex items-center gap-3 px-6 py-3.5 hover:bg-slate-50/50 transition-colors">
                                     <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-300 group-hover:text-primary transition-colors border border-transparent group-hover:border-primary/10">
                                         <HugeiconsIcon icon={Ticket01Icon} className="size-4" />
                                     </div>
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
                                     <div className={`shrink-0 px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase border border-slate-100 bg-slate-50 text-slate-400 group-hover:text-primary group-hover:border-primary/20 group-hover:bg-primary/5 transition-all`}>
                                         {ticket.priority}
                                     </div>
-                                </div>
+                                </Link>
                             )) : (
                                 <div className="text-center py-8">
                                     <p className="text-xs font-medium text-slate-400 italic">No tickets found</p>
