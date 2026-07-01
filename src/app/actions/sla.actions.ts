@@ -4,6 +4,7 @@ import { SlaService } from "@/services/sla.service";
 import { revalidatePath } from "next/cache";
 import { Priority } from "@prisma/client";
 import { z } from "zod";
+import { requireAdmin, requireStaff } from "@/lib/authz";
 
 const slaPolicySchema = z.object({
     priority: z.nativeEnum(Priority),
@@ -13,6 +14,7 @@ const slaPolicySchema = z.object({
 });
 
 export async function getSlaPolicesAction() {
+    await requireAdmin();
     return await SlaService.getAllPolicies();
 }
 
@@ -23,6 +25,7 @@ export async function upsertSlaPolicyAction(data: {
     businessHoursOnly: boolean;
 }) {
     try {
+        await requireAdmin();
         const validated = slaPolicySchema.parse(data);
         await SlaService.upsertPolicy(validated);
         revalidatePath("/dashboard/settings/sla");
@@ -37,5 +40,6 @@ export async function upsertSlaPolicyAction(data: {
 }
 
 export async function getSlaComplianceAction(days: number = 30) {
+    await requireStaff();
     return await SlaService.getComplianceStats(days);
 }

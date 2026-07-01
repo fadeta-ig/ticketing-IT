@@ -2,12 +2,11 @@
 
 import { InfraWorkflowService } from "@/services/infra-workflow.service";
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { AuditService } from "@/services/audit.service";
 import { NotificationService } from "@/services/notification.service";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { requireStaff } from "@/lib/authz";
 
 const INFRA_PATH = "/dashboard/infrastructure";
 
@@ -20,11 +19,11 @@ function revalidateInfra(projectId?: string) {
 }
 
 async function getSessionUser() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-        throw new Error("Sesi tidak valid. Silakan login ulang.");
-    }
-    return session.user;
+    return await requireStaff();
+}
+
+async function getWorkflowApprover() {
+    return await requireStaff();
 }
 
 // ─── Proposal Actions ────────────────────────────────────────
@@ -39,6 +38,7 @@ const proposalSchema = z.object({
 
 export async function saveProposalAction(projectId: string, formData: FormData) {
     try {
+        await getSessionUser();
         const data = proposalSchema.parse({
             background: formData.get("background") as string || undefined,
             objectives: formData.get("objectives") as string || undefined,
@@ -57,8 +57,8 @@ export async function saveProposalAction(projectId: string, formData: FormData) 
 
 export async function submitProposalAction(projectId: string) {
     try {
-        await InfraWorkflowService.submitProposal(projectId);
         const user = await getSessionUser();
+        await InfraWorkflowService.submitProposal(projectId);
         await AuditService.logAction({
             action: "SUBMIT_PROPOSAL",
             entity: "PROJECT",
@@ -75,7 +75,7 @@ export async function submitProposalAction(projectId: string) {
 
 export async function approveProposalAction(projectId: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.approveProposal(projectId, user.name || "Admin");
         await AuditService.logAction({
             action: "APPROVE_PROPOSAL",
@@ -103,7 +103,7 @@ export async function approveProposalAction(projectId: string) {
 
 export async function rejectProposalAction(projectId: string, reason: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.rejectProposal(projectId, reason);
         await AuditService.logAction({
             action: "REJECT_PROPOSAL",
@@ -143,6 +143,7 @@ const rkbItemSchema = z.object({
 
 export async function saveRkbAction(projectId: string, formData: FormData) {
     try {
+        await getSessionUser();
         const data = {
             submissionNumber: formData.get("submissionNumber") as string || undefined,
             justification: formData.get("justification") as string || undefined,
@@ -157,6 +158,7 @@ export async function saveRkbAction(projectId: string, formData: FormData) {
 
 export async function addRkbItemAction(projectId: string, formData: FormData) {
     try {
+        await getSessionUser();
         const data = rkbItemSchema.parse({
             itemName: formData.get("itemName") as string,
             specification: formData.get("specification") as string || undefined,
@@ -180,6 +182,7 @@ export async function addRkbItemAction(projectId: string, formData: FormData) {
 
 export async function removeRkbItemAction(itemId: string, projectId: string) {
     try {
+        await getSessionUser();
         await InfraWorkflowService.removeRkbItem(itemId);
         revalidateInfra(projectId);
         return { success: true };
@@ -190,8 +193,8 @@ export async function removeRkbItemAction(itemId: string, projectId: string) {
 
 export async function submitRkbAction(projectId: string) {
     try {
-        await InfraWorkflowService.submitRkb(projectId);
         const user = await getSessionUser();
+        await InfraWorkflowService.submitRkb(projectId);
         await AuditService.logAction({
             action: "SUBMIT_RKB",
             entity: "PROJECT",
@@ -208,7 +211,7 @@ export async function submitRkbAction(projectId: string) {
 
 export async function approveRkbAction(projectId: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.approveRkb(projectId, user.name || "Admin");
         await AuditService.logAction({
             action: "APPROVE_RKB",
@@ -236,7 +239,7 @@ export async function approveRkbAction(projectId: string) {
 
 export async function rejectRkbAction(projectId: string, reason: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.rejectRkb(projectId, reason);
         await AuditService.logAction({
             action: "REJECT_RKB",
@@ -274,6 +277,7 @@ const disbursementSchema = z.object({
 
 export async function saveDisbursementAction(projectId: string, formData: FormData) {
     try {
+        await getSessionUser();
         const data = disbursementSchema.parse({
             approvedBudget: formData.get("approvedBudget") ? Number(formData.get("approvedBudget")) : undefined,
             disbursedAmount: formData.get("disbursedAmount") ? Number(formData.get("disbursedAmount")) : undefined,
@@ -296,8 +300,8 @@ export async function saveDisbursementAction(projectId: string, formData: FormDa
 
 export async function submitDisbursementAction(projectId: string) {
     try {
-        await InfraWorkflowService.submitDisbursement(projectId);
         const user = await getSessionUser();
+        await InfraWorkflowService.submitDisbursement(projectId);
         await AuditService.logAction({
             action: "SUBMIT_DISBURSEMENT",
             entity: "PROJECT",
@@ -314,7 +318,7 @@ export async function submitDisbursementAction(projectId: string) {
 
 export async function approveDisbursementAction(projectId: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.approveDisbursement(projectId, user.name || "Admin");
         await AuditService.logAction({
             action: "APPROVE_DISBURSEMENT",
@@ -342,7 +346,7 @@ export async function approveDisbursementAction(projectId: string) {
 
 export async function rejectDisbursementAction(projectId: string, reason: string) {
     try {
-        const user = await getSessionUser();
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.rejectDisbursement(projectId, reason);
         await AuditService.logAction({
             action: "REJECT_DISBURSEMENT",
@@ -379,6 +383,7 @@ const executionLogSchema = z.object({
 
 export async function addExecutionLogAction(projectId: string, formData: FormData) {
     try {
+        const user = await getSessionUser();
         const data = executionLogSchema.parse({
             activityDescription: formData.get("activityDescription") as string,
             progressPercentage: Number(formData.get("progressPercentage")),
@@ -392,7 +397,6 @@ export async function addExecutionLogAction(projectId: string, formData: FormDat
             executionDate: executionDate ? new Date(executionDate) : undefined,
         });
 
-        const user = await getSessionUser();
         await AuditService.logAction({
             action: "ADD_EXECUTION_LOG",
             entity: "PROJECT",
@@ -413,8 +417,8 @@ export async function addExecutionLogAction(projectId: string, formData: FormDat
 
 export async function completeProjectAction(projectId: string) {
     try {
+        const user = await getWorkflowApprover();
         await InfraWorkflowService.completeProject(projectId);
-        const user = await getSessionUser();
         await AuditService.logAction({
             action: "COMPLETE_PROJECT",
             entity: "PROJECT",

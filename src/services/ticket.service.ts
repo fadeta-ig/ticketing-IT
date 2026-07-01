@@ -8,7 +8,7 @@ export class TicketService {
             where: userId ? { creatorId: userId } : undefined,
             include: {
                 creator: {
-                    select: { name: true, email: true }
+                    select: { name: true, email: true, phoneNumber: true }
                 },
                 assignee: {
                     select: { name: true, email: true }
@@ -23,7 +23,7 @@ export class TicketService {
             where: { id },
             include: {
                 creator: {
-                    select: { name: true, email: true }
+                    select: { name: true, email: true, phoneNumber: true }
                 },
                 assignee: {
                     select: { name: true, email: true }
@@ -144,7 +144,11 @@ export class TicketService {
         status: TicketStatus;
         category: string;
         classification: string;
-        assigneeId: string;
+        assigneeId: string | null;
+        dueAt: Date | null;
+        firstResponseAt: Date | null;
+        resolvedAt: Date | null;
+        slaBreached: boolean;
     }>) {
         return await prisma.ticket.update({
             where: { id },

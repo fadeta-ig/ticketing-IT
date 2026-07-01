@@ -1,14 +1,43 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from "next/server";
 import { AnalyticsService } from "@/services/analytics.service";
+import { SimplePdf } from "@/lib/documents/simple-pdf";
 
-interface jsPDFCustom extends jsPDF {
-    lastAutoTable: { finalY: number };
+function xmlEscape(value: string | number) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function worksheetXml(name: string, rows: Array<Array<string | number>>) {
+    return `
+        <Worksheet ss:Name="${xmlEscape(name)}">
+            <Table>
+                ${rows.map((row) => `
+                    <Row>
+                        ${row.map((cell) => `<Cell><Data ss:Type="${typeof cell === "number" ? "Number" : "String"}">${xmlEscape(cell)}</Data></Cell>`).join("")}
+                    </Row>
+                `).join("")}
+            </Table>
+        </Worksheet>
+    `;
+}
+
+function createSpreadsheetXml(sheets: Array<{ name: string; rows: Array<Array<string | number>> }>) {
+    return `<?xml version="1.0"?>
+        <?mso-application progid="Excel.Sheet"?>
+        <Workbook
+            xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+            xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+            ${sheets.map((sheet) => worksheetXml(sheet.name, sheet.rows)).join("")}
+        </Workbook>
+    `;
 }
 
 export async function GET(req: NextRequest) {
@@ -29,58 +58,31 @@ export async function GET(req: NextRequest) {
     const data = await AnalyticsService.getMonthlySnapshot(month, year);
 
     if (formatType === "pdf") {
-        const doc = new jsPDF() as jsPDFCustom;
+        const pdf = new SimplePdf();
+        pdf.addText(`IT OPERATION REPORT - ${data.period.toUpperCase()}`, { size: 18, bold: true, color: [140, 20, 20] });
+        pdf.addText(`Generated on: ${format(new Date(), "dd MMM yyyy HH:mm")}`, { size: 9, color: [90, 90, 90] });
+        pdf.addBlank();
+        pdf.addSection("KPI Summary");
+        pdf.addRows(
+            ["Metric", "Value"],
+            [
+                ["Total Tickets", data.totalTickets],
+                ["Resolved Tickets", data.resolvedTickets],
+                ["SLA Compliance", `${data.slaRate}%`],
+            ]
+        );
 
-        // Header
-        doc.setFontSize(20);
-        doc.setTextColor(140, 20, 20); // Maroon theme
-        doc.text(`IT OPERATION REPORT - ${data.period.toUpperCase()}`, 14, 22);
-
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Generated on: ${format(new Date(), "dd MMM yyyy HH:mm")}`, 14, 30);
-
-        // Stats Summary
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.text("KPI Summary", 14, 45);
-
-        const summaryRows = [
-            ["Total Tickets", data.totalTickets.toString()],
-            ["Resolved Tickets", data.resolvedTickets.toString()],
-            ["SLA Compliance", `${data.slaRate}%`]
-        ];
-
-        autoTable(doc, {
-            startY: 50,
-            head: [['Metric', 'Value']],
-            body: summaryRows,
-            theme: 'striped',
-            headStyles: { fillColor: [140, 20, 20] }
-        });
-
-        // Ticket Details
-        doc.text("Ticket Details", 14, doc.lastAutoTable.finalY + 15);
-
-        const ticketRows = data.tickets.map(t => [
+        pdf.addSection("Ticket Details");
+        pdf.addRows(["Date", "Title", "Priority", "Category", "Status", "Assignee"], data.tickets.map(t => [
             format(new Date(t.createdAt), "dd/MM"),
             t.title.substring(0, 40) + (t.title.length > 40 ? "..." : ""),
             t.priority,
             t.category || "-",
             t.status,
             t.assignee
-        ]);
+        ]));
 
-        autoTable(doc, {
-            startY: doc.lastAutoTable.finalY + 20,
-            head: [['Date', 'Title', 'Priority', 'Category', 'Status', 'Assignee']],
-            body: ticketRows,
-            theme: 'grid',
-            headStyles: { fillColor: [60, 60, 60] },
-            styles: { fontSize: 8 }
-        });
-
-        const pdfOutput = doc.output("arraybuffer");
+        const pdfOutput = pdf.toUint8Array();
         return new NextResponse(pdfOutput, {
             headers: {
                 "Content-Type": "application/pdf",
@@ -88,9 +90,6 @@ export async function GET(req: NextRequest) {
             }
         });
     } else if (formatType === "excel") {
-        const wb = XLSX.utils.book_new();
-
-        // Summary Sheet
         const summaryData = [
             ["IT OPERATION REPORT", data.period],
             [],
@@ -99,10 +98,7 @@ export async function GET(req: NextRequest) {
             ["Resolved Tickets", data.resolvedTickets],
             ["SLA Compliance", `${data.slaRate}%`]
         ];
-        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
 
-        // Details Sheet
         const detailsData = [
             ["Date", "Title", "Priority", "Category", "Status", "Assignee"],
             ...data.tickets.map(t => [
@@ -114,14 +110,16 @@ export async function GET(req: NextRequest) {
                 t.assignee
             ])
         ];
-        const wsDetails = XLSX.utils.aoa_to_sheet(detailsData);
-        XLSX.utils.book_append_sheet(wb, wsDetails, "Tickets");
 
-        const excelOutput = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+        const excelOutput = createSpreadsheetXml([
+            { name: "Summary", rows: summaryData },
+            { name: "Tickets", rows: detailsData },
+        ]);
+
         return new NextResponse(excelOutput, {
             headers: {
-                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "Content-Disposition": `attachment; filename=IT_Report_${month}_${year}.xlsx`
+                "Content-Type": "application/vnd.ms-excel; charset=utf-8",
+                "Content-Disposition": `attachment; filename=IT_Report_${month}_${year}.xls`
             }
         });
     }

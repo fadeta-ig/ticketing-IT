@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-    Download01Icon,
     File01Icon,
     TableIcon,
     Calendar01Icon
@@ -29,7 +28,7 @@ export function ReportGenerator() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `IT_Report_${month}_${year}.${format === "pdf" ? "pdf" : "xlsx"}`;
+            a.download = `IT_Report_${month}_${year}.${format === "pdf" ? "pdf" : "xls"}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

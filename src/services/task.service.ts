@@ -23,6 +23,12 @@ export class TaskService {
         });
     }
 
+    static async getTaskById(id: string) {
+        return await prisma.task.findUnique({
+            where: { id }
+        });
+    }
+
     static async updateTask(id: string, data: Partial<{
         title: string;
         description: string;

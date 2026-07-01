@@ -11,8 +11,16 @@ import { TaskService } from "@/services/task.service";
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    const isProduction = process.env.NODE_ENV === "production";
 
-    // Allow if no secret is set (dev mode) or if token matches
+    if (!cronSecret && isProduction) {
+        return NextResponse.json(
+            { error: "CRON_SECRET is not configured" },
+            { status: 500 }
+        );
+    }
+
+    // Development may run without a secret; production requires a matching bearer token.
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

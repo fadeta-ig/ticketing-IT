@@ -3,13 +3,10 @@
 import { useState, useEffect, useTransition } from "react";
 import { getKbCategoriesAction, getKbArticlesAction, createKbCategoryAction, createKbArticleAction, deleteKbArticleAction, deleteKbCategoryAction, updateKbArticleAction, getKbStatsAction, incrementKbViewCountAction, recordKbFeedbackAction } from "@/app/actions/kb.actions";
 import { useSession } from "next-auth/react";
-import dynamic from 'next/dynamic';
-import parse from 'html-react-parser';
-import 'react-quill-new/dist/quill.snow.css';
+import parse from "html-react-parser";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { File01Icon, CheckmarkBadge01Icon, Folder01Icon, ViewIcon, BookOpen01Icon, Search01Icon, Add01Icon, Delete01Icon, Cancel01Icon, Tick01Icon, FilterIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
-
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import { getKnowledgeBasePlainText, sanitizeKnowledgeBaseHtml } from "@/lib/kb-sanitize";
 
 interface Category { id: string; name: string; description: string | null; icon: string | null; _count: { articles: number } }
 interface Article { id: string; title: string; content: string; slug: string; isPublished: boolean; viewCount: number; helpfulCount: number; notHelpfulCount: number; tags: string | null; categoryId: string; category: { name: string; icon: string | null }; author: { name: string | null }; createdAt: Date; updatedAt: Date }
@@ -50,8 +47,6 @@ export default function KnowledgeBasePage() {
     const [editPublished, setEditPublished] = useState(false);
     const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
 
-    useEffect(() => { loadData(); }, []);
-
     async function loadData() {
         const [cats, arts, st] = await Promise.all([
             getKbCategoriesAction(),
@@ -62,6 +57,29 @@ export default function KnowledgeBasePage() {
         setArticles(arts as Article[]);
         setStats(st);
     }
+
+    useEffect(() => {
+        let isActive = true;
+
+        async function loadInitialData() {
+            const [cats, arts, st] = await Promise.all([
+                getKbCategoriesAction(),
+                getKbArticlesAction(),
+                getKbStatsAction(),
+            ]);
+
+            if (!isActive) return;
+            setCategories(cats as Category[]);
+            setArticles(arts as Article[]);
+            setStats(st);
+        }
+
+        void loadInitialData();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     async function handleSearch() { await loadData(); }
 
@@ -126,7 +144,7 @@ export default function KnowledgeBasePage() {
                 setNewCategoryName(""); setNewCategoryDesc(""); setNewCategoryIcon("");
                 showMsg("success", "Kategori berhasil dibuat!");
                 await loadData();
-            } catch (err: any) { showMsg("error", err.message); }
+            } catch (err: unknown) { showMsg("error", err instanceof Error ? err.message : "Gagal membuat kategori"); }
         });
     }
 
@@ -142,7 +160,7 @@ export default function KnowledgeBasePage() {
                 setActiveTab("articles");
                 showMsg("success", "Artikel berhasil dibuat!");
                 await loadData();
-            } catch (err: any) { showMsg("error", err.message); }
+            } catch (err: unknown) { showMsg("error", err instanceof Error ? err.message : "Gagal membuat artikel"); }
         });
     }
 
@@ -162,7 +180,7 @@ export default function KnowledgeBasePage() {
                 await deleteKbCategoryAction(id);
                 showMsg("success", "Kategori dihapus.");
                 await loadData();
-            } catch (err: any) { showMsg("error", "Gagal menghapus: " + err.message); }
+            } catch (err: unknown) { showMsg("error", "Gagal menghapus: " + (err instanceof Error ? err.message : "Terjadi kesalahan")); }
         });
     }
 
@@ -269,7 +287,9 @@ export default function KnowledgeBasePage() {
                                             {!article.isPublished && <span className="text-[10px] bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md font-bold uppercase tracking-widest">Draf</span>}
                                         </div>
                                         <h3 className="font-bold text-lg text-slate-800 group-hover:text-primary transition-colors line-clamp-2 leading-tight mb-3">{article.title}</h3>
-                                        <div className="text-sm text-slate-500 line-clamp-3 mb-4 leading-relaxed opacity-80" dangerouslySetInnerHTML={{ __html: article.content.substring(0, 150) + "..." }} />
+                                        <p className="text-sm text-slate-500 line-clamp-3 mb-4 leading-relaxed opacity-80">
+                                            {getKnowledgeBasePlainText(article.content, 150)}
+                                        </p>
                                     </div>
                                     <div className="px-6 py-4 border-t border-slate-50 bg-slate-50/30 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -367,24 +387,12 @@ export default function KnowledgeBasePage() {
                         </div>
                         <div>
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Konten Artikel *</label>
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
-                                <ReactQuill
-                                    theme="snow"
-                                    value={articleContent}
-                                    onChange={setArticleContent}
-                                    className="h-[400px]"
-                                    modules={{
-                                        toolbar: [
-                                            [{ 'header': [1, 2, 3, false] }],
-                                            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                                            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-                                            ['link', 'code-block'],
-                                            ['clean']
-                                        ],
-                                    }}
-                                    placeholder="Tulis panduan langkah demi langkah di sini..."
-                                />
-                            </div>
+                            <textarea
+                                value={articleContent}
+                                onChange={(e) => setArticleContent(e.target.value)}
+                                className="w-full min-h-[360px] px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm"
+                                placeholder="Tulis panduan langkah demi langkah di sini..."
+                            />
                         </div>
                         <div className="mt-20 pt-8 border-t border-slate-100">
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Tags (Opsional, pisahkan koma)</label>
@@ -424,7 +432,7 @@ export default function KnowledgeBasePage() {
                             </button>
                         </div>
                         <div className="p-8 prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-2xl prose-pre:bg-slate-900 prose-pre:rounded-xl">
-                            {parse(selectedArticle.content)}
+                            {parse(sanitizeKnowledgeBaseHtml(selectedArticle.content))}
                         </div>
                         {selectedArticle.tags && (
                             <div className="px-8 pb-6 flex flex-wrap gap-2">
@@ -500,8 +508,10 @@ export default function KnowledgeBasePage() {
                             <div>
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Konten Artikel *</label>
                                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
-                                    <ReactQuill theme="snow" value={editContent} onChange={setEditContent} className="h-[300px]"
-                                        modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline', 'strike', 'blockquote'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'code-block'], ['clean']] }}
+                                    <textarea
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        className="w-full min-h-[260px] px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm"
                                     />
                                 </div>
                             </div>

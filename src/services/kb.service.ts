@@ -10,6 +10,19 @@ export class KbService {
         });
     }
 
+    static async getPublishedCategories() {
+        return await prisma.kbCategory.findMany({
+            orderBy: { sortOrder: "asc" },
+            include: {
+                _count: {
+                    select: {
+                        articles: { where: { isPublished: true } },
+                    },
+                },
+            },
+        });
+    }
+
     static async createCategory(data: { name: string; description?: string; icon?: string }) {
         return await prisma.kbCategory.create({ data });
     }
@@ -172,6 +185,27 @@ export class KbService {
 
         return {
             totalArticles,
+            publishedArticles,
+            totalCategories,
+            totalViews: totalViews._sum.viewCount ?? 0,
+        };
+    }
+
+    /** Public stats that do not leak draft article counts. */
+    static async getPublicStats() {
+        const [publishedArticles, totalCategories, totalViews] = await Promise.all([
+            prisma.kbArticle.count({ where: { isPublished: true } }),
+            prisma.kbCategory.count({
+                where: { articles: { some: { isPublished: true } } },
+            }),
+            prisma.kbArticle.aggregate({
+                where: { isPublished: true },
+                _sum: { viewCount: true },
+            }),
+        ]);
+
+        return {
+            totalArticles: publishedArticles,
             publishedArticles,
             totalCategories,
             totalViews: totalViews._sum.viewCount ?? 0,
